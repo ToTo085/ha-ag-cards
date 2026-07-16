@@ -138,7 +138,12 @@ Prima di considerare completa una card: `typecheck` verde + prova reale in una d
 3. Implementare config, card ed editor secondo le convenzioni sopra.
 4. Importare la card in `src/ag-cards.ts`.
 5. Aggiornare la tabella "Card disponibili" nel `README.md`.
-6. `npm run typecheck && npm run build`, poi test in HA.
+6. **Alzare la versione**: una card nuova è una feature retrocompatibile, quindi bump
+   **minor** (0.1.0 → 0.2.0). Va aggiornata in **due punti**, che devono restare
+   allineati: `version` in `package.json` e `AG_CARDS_VERSION` in `src/const.ts`
+   (quest'ultima è la versione mostrata nel banner di avvio e quella che si legge
+   dalla console di HA per capire quale bundle è caricato).
+7. `npm run typecheck && npm run build`, poi test in HA.
 
 ## Riferimenti
 
