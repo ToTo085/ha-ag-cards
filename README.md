@@ -9,6 +9,7 @@ Ogni card include un **popup di configurazione visuale** (editor `ha-form`), cos
 | Card | Tipo | Descrizione |
 |------|------|-------------|
 | AG Entity Card | `custom:ag-entity-card` | Mostra icona, nome e stato di una singola entità. |
+| AG Battery Card | `custom:ag-battery-card` | Stato di una batteria domestica: carica, potenza, rete e backup. |
 
 ## Installazione
 

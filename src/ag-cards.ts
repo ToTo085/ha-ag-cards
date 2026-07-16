@@ -13,6 +13,7 @@ import { AG_CARDS_VERSION } from "./const";
 
 // -- Registrazione card --------------------------------------------------
 import "./cards/entity/ag-entity-card";
+import "./cards/battery/ag-battery-card";
 
 // -- Banner di avvio -----------------------------------------------------
 /* eslint-disable no-console */
