@@ -6,20 +6,16 @@ Ogni card include un **popup di configurazione visuale** (editor `ha-form`), cos
 
 ## Card disponibili
 
-_Nessuna card ancora rilasciata. Le aggiungeremo una alla volta._
-
-<!-- Elenco aggiornato ad ogni nuova card:
 | Card | Tipo | Descrizione |
 |------|------|-------------|
-| AG Badge | `custom:ag-badge-card` | ... |
--->
+| AG Entity Card | `custom:ag-entity-card` | Mostra icona, nome e stato di una singola entità. |
 
 ## Installazione
 
 ### HACS (consigliata)
 
 1. HACS → **Frontend** → menu ⋮ → **Custom repositories**
-2. Aggiungi `https://github.com/agioia/ha-ag-cards` come categoria **Lovelace**
+2. Aggiungi `https://github.com/ToTo085/ha-ag-cards` come categoria **Lovelace**
 3. Cerca **AG Cards**, installa e ricarica.
 
 ### Manuale
@@ -37,12 +33,15 @@ _Nessuna card ancora rilasciata. Le aggiungeremo una alla volta._
 Aggiungi una card dalla UI (**Aggiungi card → cerca "AG"**) oppure via YAML:
 
 ```yaml
-type: custom:ag-template-card
+type: custom:ag-entity-card
 entity: sensor.example
 name: Esempio
 ```
 
 ## Sviluppo
+
+Serve **Node.js** (LTS). Se usi [nvm](https://github.com/nvm-sh/nvm), il repo include un
+`.nvmrc`: basta `nvm install` seguito da `nvm use` per allinearsi alla versione consigliata.
 
 ```bash
 npm install      # installa le dipendenze
@@ -50,6 +49,19 @@ npm run watch    # build in watch mode su dist/ag-cards.js
 npm run build    # build di produzione (minificata)
 npm run typecheck
 ```
+
+### Variabili d'ambiente (`.env`)
+
+Copia il template e, se vuoi, imposta `HA_WWW`:
+
+```bash
+cp .env.example .env
+```
+
+Con `HA_WWW=<config>/www` valorizzato nel `.env`, `npm run dev` / `npm run build` scrivono
+il bundle **direttamente** nella cartella `www` di Home Assistant (`<HA_WWW>/ag-cards.js`)
+invece che in `dist/`, così vedi subito le modifiche in HA. Il `.env` è git-ignorato; una
+variabile passata inline (`HA_WWW=... npm run dev`) ha comunque la precedenza.
 
 Vedi [`CLAUDE.md`](./CLAUDE.md) per le convenzioni di sviluppo e
 [`docs/NEW_CARD_PROMPT.md`](./docs/NEW_CARD_PROMPT.md) per il template con cui

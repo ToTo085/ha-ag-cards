@@ -12,7 +12,7 @@ import { AG_CARDS_VERSION } from "./const";
  */
 
 // -- Registrazione card --------------------------------------------------
-// (nessuna card ancora: le aggiungeremo una alla volta)
+import "./cards/entity/ag-entity-card";
 
 // -- Banner di avvio -----------------------------------------------------
 /* eslint-disable no-console */

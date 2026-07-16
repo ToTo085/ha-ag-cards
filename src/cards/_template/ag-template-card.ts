@@ -69,7 +69,7 @@ registerCustomCard({
   type: CARD_TYPE,
   name: CARD_NAME,
   description: "Card template di riferimento per la collezione AG Cards.",
-  documentationURL: "https://github.com/agioia/ha-ag-cards",
+  documentationURL: "https://github.com/ToTo085/ha-ag-cards",
 });
 
 declare global {
