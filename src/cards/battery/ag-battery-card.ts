@@ -15,7 +15,6 @@ import {
   type AgBatteryCardConfig,
 } from "./config";
 import {
-  parseNumericState,
   levelSeverity,
   powerFlow,
   okStates,
@@ -23,7 +22,8 @@ import {
   systemStatus,
   type Severity,
 } from "./logic";
-import { toWatts, formatPower } from "./power";
+import { parseNumericState } from "../../utils/states";
+import { toWatts, formatPower } from "../../utils/power";
 import { ringGauge } from "./gauge";
 import "./ag-battery-card-editor";
 

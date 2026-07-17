@@ -1,7 +1,13 @@
-import type { HomeAssistant, LovelaceCardConfig, LovelaceCardEditor } from "custom-card-helpers";
+import type {
+  HomeAssistant,
+  LovelaceCard,
+  LovelaceCardConfig,
+  LovelaceCardEditor,
+  LovelaceConfig,
+} from "custom-card-helpers";
 
 // Re-export dei tipi HA usati più di frequente, per import puliti nelle card.
-export type { HomeAssistant, LovelaceCardConfig, LovelaceCardEditor };
+export type { HomeAssistant, LovelaceCard, LovelaceCardConfig, LovelaceCardEditor, LovelaceConfig };
 
 // Interfaccia base che ogni card della collezione deve implementare.
 export interface AgLovelaceCard extends HTMLElement {

@@ -10,6 +10,10 @@ Ogni card include un **popup di configurazione visuale** (editor `ha-form`), cos
 |------|------|-------------|
 | AG Entity Card | `custom:ag-entity-card` | Mostra icona, nome e stato di una singola entità. |
 | AG Battery Card | `custom:ag-battery-card` | Stato di una batteria domestica: carica, potenza, rete e backup. |
+| AG Panel Card | `custom:ag-panel-card` | Pannello con intestazione (titolo, sottotitolo, valore o somma a destra) e card figlie impilate. |
+| AG VStack Card | `custom:ag-vstack-card` | Pila verticale di card figlie senza cornice ("flat"). |
+| AG HStack Card | `custom:ag-hstack-card` | Fila orizzontale di card figlie a larghezza uguale, senza cornice. |
+| AG Separator Card | `custom:ag-separator-card` | Sottile linea divisoria da usare tra card. |
 
 ## Installazione
 

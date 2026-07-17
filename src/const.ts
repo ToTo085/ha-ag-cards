@@ -1,5 +1,5 @@
 // Versione della collezione. Aggiornata ad ogni release.
-export const AG_CARDS_VERSION = "0.2.0";
+export const AG_CARDS_VERSION = "0.3.1";
 
 // Prefisso comune per tutti i custom element della collezione.
 // Ogni card sarà registrata come `ag-<nome>-card`.

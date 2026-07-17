@@ -20,7 +20,9 @@ export abstract class AgBaseCard<TConfig extends LovelaceCardConfig = LovelaceCa
   public abstract setConfig(config: TConfig): void;
 
   // Altezza indicativa della card in "unità" (1 unità ≈ 50px) usata dal layout masonry.
-  public getCardSize(): number {
+  // La firma ammette Promise perché i contenitori la calcolano dai figli (che
+  // possono a loro volta rispondere in modo asincrono); HA accetta entrambe.
+  public getCardSize(): number | Promise<number> {
     return 3;
   }
 

@@ -1,5 +1,5 @@
 import { formatNumber } from "custom-card-helpers";
-import type { HomeAssistant } from "../../types";
+import type { HomeAssistant } from "../types";
 
 // Attenzione al case: "mW" (milli) e "MW" (mega) differiscono di 10^9.
 const POWER_FACTORS: Record<string, number> = {
@@ -35,7 +35,8 @@ export function toWatts(value: number, unit?: string): number | undefined {
 
 /**
  * Formatta una potenza in watt per il display, in valore assoluto:
- * la direzione la comunica il testo ("In carica" / "In scarica").
+ * l'eventuale direzione la comunica il contesto (testo o segno aggiunto
+ * dal chiamante).
  *
  * >= 1000 W -> kW con 2 decimali ("2,20 kW"); sotto -> W interi ("750 W").
  * formatNumber rispetta il formato numerico scelto dall'utente in HA
