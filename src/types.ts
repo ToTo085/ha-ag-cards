@@ -1,4 +1,6 @@
 import type {
+  ActionConfig,
+  ActionHandlerEvent,
   HomeAssistant,
   LovelaceCard,
   LovelaceCardConfig,
@@ -7,7 +9,25 @@ import type {
 } from "custom-card-helpers";
 
 // Re-export dei tipi HA usati più di frequente, per import puliti nelle card.
-export type { HomeAssistant, LovelaceCard, LovelaceCardConfig, LovelaceCardEditor, LovelaceConfig };
+export type {
+  ActionConfig,
+  ActionHandlerEvent,
+  HomeAssistant,
+  LovelaceCard,
+  LovelaceCardConfig,
+  LovelaceCardEditor,
+  LovelaceConfig,
+};
+
+// Sottoinsieme di config che gli helper azione di HA (`handleAction`) leggono:
+// l'entità su cui agire e le tre azioni per gesto. Le card che mostrano
+// un'entità estendono la propria config con questi campi.
+export interface AgActionableConfig {
+  entity?: string;
+  tap_action?: ActionConfig;
+  hold_action?: ActionConfig;
+  double_tap_action?: ActionConfig;
+}
 
 // Interfaccia base che ogni card della collezione deve implementare.
 export interface AgLovelaceCard extends HTMLElement {

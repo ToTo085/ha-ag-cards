@@ -1,5 +1,6 @@
 import { html, css, nothing, type TemplateResult } from "lit";
 import { customElement } from "lit/decorators.js";
+import { styleMap } from "lit/directives/style-map.js";
 import { AgBaseCard } from "../../base/ag-base-card";
 import { registerCustomCard } from "../../utils/register-card";
 import type { LovelaceCardEditor } from "../../types";
@@ -53,11 +54,21 @@ export class AgEntityCard extends AgBaseCard<AgEntityCardConfig> {
     const stateObj = entityId ? this.hass.states[entityId] : undefined;
     const name =
       this._config.name || stateObj?.attributes.friendly_name || entityId || "";
+    const interactive = this._hasAnyAction();
+    // Impostata solo se configurata: senza la property il var() del CSS ricade
+    // su `inherit`, cioè il font del tema HA.
+    const valueFont = this._config.value_font?.trim();
+    const vars = styleMap(valueFont ? { "--ag-value-font": valueFont } : {});
 
     // Entità configurata ma non presente in hass.states.
     if (!stateObj) {
       return html`
-        <ha-card>
+        <ha-card
+          class=${interactive ? "interactive" : ""}
+          style=${vars}
+          @action=${this._handleAction}
+          .actionHandler=${this._actionHandlerDirective()}
+        >
           <div class="content">
             <ha-icon class="icon unavailable" .icon=${this._config.icon || "mdi:alert-circle-outline"}></ha-icon>
             <span class="name">${name}</span>
@@ -79,7 +90,12 @@ export class AgEntityCard extends AgBaseCard<AgEntityCardConfig> {
       localizedState || `${stateObj.state}${unit ? ` ${unit}` : ""}`;
 
     return html`
-      <ha-card>
+      <ha-card
+        class=${interactive ? "interactive" : ""}
+        style=${vars}
+        @action=${this._handleAction}
+        .actionHandler=${this._actionHandlerDirective()}
+      >
         <div class="content">
           <ha-state-icon
             class="icon"
@@ -95,18 +111,24 @@ export class AgEntityCard extends AgBaseCard<AgEntityCardConfig> {
   }
 
   static styles = css`
+    ha-card.interactive {
+      cursor: pointer;
+    }
+    /* Vedi ag-bar-card: il contenitore che ha uno spazio proprio azzera
+       --ag-item-padding-x, così le righe si allineano al titolo. */
     .content {
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 12px 16px;
+      padding: 12px var(--ag-item-padding-x, 16px);
     }
     .icon {
       color: var(--state-icon-color, var(--primary-color));
       flex: 0 0 auto;
     }
     .name {
-      font-weight: 500;
+      font-family: var(--ag-value-font, inherit);
+      font-weight: 600;
       color: var(--primary-text-color);
       flex: 1 1 auto;
       overflow: hidden;
@@ -114,6 +136,7 @@ export class AgEntityCard extends AgBaseCard<AgEntityCardConfig> {
       white-space: nowrap;
     }
     .state {
+      font-family: var(--ag-value-font, inherit);
       color: var(--primary-color);
       font-weight: 500;
       flex: 0 0 auto;

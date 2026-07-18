@@ -86,10 +86,24 @@ export class AgBatteryCardEditor extends LitElement implements LovelaceCardEdito
             },
           ],
         },
+        { name: "value_font", selector: { text: {} } },
         { name: "color_normal", selector: { text: {} } },
         { name: "color_charging", selector: { text: {} } },
         { name: "color_warning", selector: { text: {} } },
         { name: "color_alarm", selector: { text: {} } },
+      ],
+    },
+    {
+      name: "",
+      type: "expandable",
+      title: "Azioni",
+      icon: "mdi:gesture-tap",
+      // Selettore `ui_action` fornito da HA a runtime (non tipizzato nel
+      // pacchetto). Le azioni agiscono sull'entità carica batteria.
+      schema: [
+        { name: "tap_action", selector: { ui_action: { default_action: "more-info" } } },
+        { name: "hold_action", selector: { ui_action: {} } },
+        { name: "double_tap_action", selector: { ui_action: {} } },
       ],
     },
   ];
@@ -109,10 +123,14 @@ export class AgBatteryCardEditor extends LitElement implements LovelaceCardEdito
       invert_power: "Inverti segno potenza",
       title_font: "Font del titolo",
       title_size: "Dimensione titolo",
+      value_font: "Font di percentuale e righe",
       color_normal: "Colore normale",
       color_charging: "Colore in carica",
       color_warning: "Colore warning",
       color_alarm: "Colore allarme",
+      tap_action: "Azione al tap",
+      hold_action: "Azione alla pressione prolungata",
+      double_tap_action: "Azione al doppio tap",
     };
     // Le sezioni expandable/grid hanno name "": ricadono sul loro `title`.
     return labels[schema.name] ?? schema.title ?? schema.name;
@@ -130,6 +148,8 @@ export class AgBatteryCardEditor extends LitElement implements LovelaceCardEdito
       title_font:
         "Vuoto = font del tema. Es: 'Cormorant Garamond', serif — il font va caricato dal tema HA, la card non può caricarlo da sé.",
       title_size: "Dimensione del titolo. I serif da display stanno meglio sui 17-18px.",
+      value_font:
+        "Font della percentuale e delle righe di stato. Default 'Jost, sans-serif'; scrivi 'inherit' per usare il font del tema.",
       color_normal: colorHelp,
       color_charging: colorHelp,
       color_warning: colorHelp,

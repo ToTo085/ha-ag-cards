@@ -1,4 +1,4 @@
-import type { LovelaceCardConfig } from "../../types";
+import type { ActionConfig, LovelaceCardConfig } from "../../types";
 
 // Nome del tipo card usato in YAML: `type: custom:ag-template-card`
 export const CARD_TYPE = "ag-template-card";
@@ -11,6 +11,10 @@ export interface AgTemplateCardConfig extends LovelaceCardConfig {
   entity?: string;
   name?: string;
   icon?: string;
+  // Azioni per gesto. Assenti = default HA (tap apre il more-info dell'entità).
+  tap_action?: ActionConfig;
+  hold_action?: ActionConfig;
+  double_tap_action?: ActionConfig;
 }
 
 // Valori di default applicati in setConfig().

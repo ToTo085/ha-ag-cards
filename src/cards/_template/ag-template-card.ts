@@ -38,9 +38,14 @@ export class AgTemplateCard extends AgBaseCard<AgTemplateCardConfig> {
 
     const stateObj = this._config.entity ? this.hass.states[this._config.entity] : undefined;
     const name = this._config.name || stateObj?.attributes.friendly_name || "";
+    const interactive = this._hasAnyAction();
 
     return html`
-      <ha-card>
+      <ha-card
+        class=${interactive ? "interactive" : ""}
+        @action=${this._handleAction}
+        .actionHandler=${this._actionHandlerDirective()}
+      >
         <div class="content">
           <span class="name">${name}</span>
           ${stateObj ? html`<span class="state">${stateObj.state}</span>` : nothing}
@@ -50,6 +55,9 @@ export class AgTemplateCard extends AgBaseCard<AgTemplateCardConfig> {
   }
 
   static styles = css`
+    ha-card.interactive {
+      cursor: pointer;
+    }
     .content {
       display: flex;
       align-items: center;

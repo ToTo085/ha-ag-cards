@@ -22,19 +22,36 @@ export class AgTemplateCardEditor extends LitElement implements LovelaceCardEdit
   }
 
   // Schema dei campi -> ha-form costruisce l'interfaccia da qui.
+  // La sezione "Azioni" usa il selettore `ui_action` fornito da HA a runtime
+  // (non tipizzato nel pacchetto, come gli altri ha-selector-*).
   private _schema = [
     { name: "entity", selector: { entity: {} } },
     { name: "name", selector: { text: {} } },
     { name: "icon", selector: { icon: {} } },
+    {
+      name: "",
+      type: "expandable",
+      title: "Azioni",
+      icon: "mdi:gesture-tap",
+      schema: [
+        { name: "tap_action", selector: { ui_action: { default_action: "more-info" } } },
+        { name: "hold_action", selector: { ui_action: {} } },
+        { name: "double_tap_action", selector: { ui_action: {} } },
+      ],
+    },
   ];
 
-  private _computeLabel = (schema: { name: string }): string => {
+  private _computeLabel = (schema: { name: string; title?: string }): string => {
     const labels: Record<string, string> = {
       entity: "Entità",
       name: "Nome",
       icon: "Icona",
+      tap_action: "Azione al tap",
+      hold_action: "Azione alla pressione prolungata",
+      double_tap_action: "Azione al doppio tap",
     };
-    return labels[schema.name] ?? schema.name;
+    // La sezione expandable ha name "": ricade sul suo `title`.
+    return labels[schema.name] ?? schema.title ?? schema.name;
   };
 
   private _valueChanged(ev: CustomEvent): void {

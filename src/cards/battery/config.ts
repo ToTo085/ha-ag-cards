@@ -1,4 +1,5 @@
-import type { LovelaceCardConfig } from "../../types";
+import { DEFAULT_VALUE_FONT } from "../../const";
+import type { ActionConfig, LovelaceCardConfig } from "../../types";
 
 // Nome del tipo card usato in YAML: `type: custom:ag-battery-card`
 export const CARD_TYPE = "ag-battery-card";
@@ -10,6 +11,11 @@ export interface AgBatteryCardConfig extends LovelaceCardConfig {
   type: string;
   battery_entity?: string; // obbligatoria, validata in setConfig()
   power_entity?: string; // obbligatoria, validata in setConfig()
+  // Azioni per gesto: agiscono sull'entità carica batteria (battery_entity).
+  // Assenti = default HA (tap apre il more-info della batteria).
+  tap_action?: ActionConfig;
+  hold_action?: ActionConfig;
+  double_tap_action?: ActionConfig;
   backup_entity?: string;
   grid_entity?: string;
   name?: string;
@@ -21,6 +27,7 @@ export interface AgBatteryCardConfig extends LovelaceCardConfig {
   grid_ok_states?: string;
   title_font?: string; // font-family CSS; vuoto = font del tema HA
   title_size?: number; // px
+  value_font?: string; // font della percentuale e delle righe; default Jost
   color_normal?: string;
   color_charging?: string;
   color_warning?: string;
@@ -44,6 +51,7 @@ export const DEFAULT_CONFIG: Partial<AgBatteryCardConfig> = {
   name: "",
   invert_power: false,
   title_font: "",
+  value_font: DEFAULT_VALUE_FONT,
   ...DEFAULTS,
 };
 

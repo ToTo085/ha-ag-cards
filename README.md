@@ -10,6 +10,7 @@ Ogni card include un **popup di configurazione visuale** (editor `ha-form`), cos
 |------|------|-------------|
 | AG Entity Card | `custom:ag-entity-card` | Mostra icona, nome e stato di una singola entità. |
 | AG Battery Card | `custom:ag-battery-card` | Stato di una batteria domestica: carica, potenza, rete e backup. |
+| AG Bar Card | `custom:ag-bar-card` | Barra orizzontale con nome, descrizione e valore; massimo proprio o condiviso col gruppo. |
 | AG Panel Card | `custom:ag-panel-card` | Pannello con intestazione (titolo, sottotitolo, valore o somma a destra) e card figlie impilate. |
 | AG VStack Card | `custom:ag-vstack-card` | Pila verticale di card figlie senza cornice ("flat"). |
 | AG HStack Card | `custom:ag-hstack-card` | Fila orizzontale di card figlie a larghezza uguale, senza cornice. |
@@ -42,6 +43,134 @@ type: custom:ag-entity-card
 entity: sensor.example
 name: Esempio
 ```
+
+### Azioni (tap / pressione prolungata / doppio tap)
+
+Le card che mostrano un'entità (**Entity**, **Battery** e **Bar**) supportano le azioni
+standard di Home Assistant. **Di default, il tap apre il pannello nativo di
+dettaglio** (`more-info`) dell'entità; pressione prolungata e doppio tap restano
+inattivi finché non li configuri. Tutto è impostabile dall'editor (sezione
+*Azioni*) o via YAML:
+
+```yaml
+type: custom:ag-entity-card
+entity: light.salotto
+tap_action:
+  action: toggle
+hold_action:
+  action: more-info
+double_tap_action:
+  action: navigate
+  navigation_path: /lovelace/luci
+```
+
+Sono supportate le azioni HA: `more-info` (default), `toggle`, `call-service`,
+`navigate`, `url`, `none`. Sulla Battery card le azioni agiscono sull'entità
+della carica (`battery_entity`).
+
+### Massimo condiviso tra più barre
+
+Di default ogni **AG Bar Card** si scala sul proprio massimo: quello dell'entità
+indicata in `max_entity`, altrimenti il numero fisso `max_value`, altrimenti il
+proprio valore corrente (barra piena).
+
+Mettendo più barre in un contenitore AG con `share_max: true` e impostandole su
+`max_mode: group`, tutte si scalano sulla **capacità dichiarata più alta del
+gruppo**, così le lunghezze diventano confrontabili:
+
+```yaml
+type: custom:ag-vstack-card
+share_max: true
+cards:
+  - type: custom:ag-bar-card
+    entity: sensor.fotovoltaico_potenza
+    name: FV
+    description: 6 kWp
+    icon: mdi:solar-power-variant
+    value_format: power
+    max_mode: group
+    max_value: 6
+    max_unit: kW        # senza questo, 6 vale 6 W se il sensore e' in W
+  - type: custom:ag-bar-card
+    entity: sensor.pompa_calore_potenza
+    name: PdC
+    description: Unico carico
+    icon: mdi:heat-pump
+    value_format: power
+    max_mode: group
+```
+
+> **`max_unit` è la svista più facile.** Il `max_value` è un numero senza unità:
+> se non specifichi `max_unit`, viene interpretato nell'unità del sensore. Con un
+> sensore in W, un impianto da 19 kWp scritto come `max_value: 19` vale 19 W e la
+> barra risulta sempre piena.
+
+Con FV a 2,07 kW e PdC a 0,20 kW il massimo di gruppo è 6 kW: la barra FV si
+riempie al 34% e quella PdC al 3%.
+
+**Cosa contribuisce al massimo di gruppo.** Ogni barra ci mette la propria
+capacità dichiarata (`max_entity` o `max_value`); una barra che non ne dichiara
+nessuna — come la PdC dell'esempio — ci mette il **proprio valore corrente**.
+Di conseguenza:
+
+- una barra che dichiara una capacità e la supera **satura al 100%** senza
+  allargare la scala delle altre (FV a 9 kW su 6 kWp: FV piena, PdC ferma al 3%);
+- una barra **senza** capacità dichiarata che supera tutte le altre alza invece
+  il massimo del gruppo (PdC a 9 kW: PdC piena e FV si riscala al 23%). Se non
+  è quello che vuoi, dichiara un `max_value` anche su quella barra.
+
+Note:
+- `value_format: power` normalizza tutto in watt, quindi nello stesso gruppo
+  possono convivere entità in W e in kW. Con `value_format: auto` si confrontano
+  solo le barre che hanno la **stessa unità**.
+- `max_value` è nell'unità dell'entità del valore (`6` con un valore in kW = 6 kW).
+- Con contenitori annidati lo scope è del **più interno** che ha `share_max: true`:
+  un vstack che lo tiene spento lascia risalire le sue barre al panel esterno.
+- Fuori da un contenitore che condivide, `max_mode: group` si comporta come
+  `own`: la card non si rompe mai.
+
+### Font
+
+Tutte le card espongono `value_font`, che vale per valori, nomi ed etichette.
+Il default è `Jost, sans-serif`; scrivi `inherit` per usare il font del tema.
+Panel e Battery hanno in più `title_font` per il solo titolo, che di default
+resta quello del tema (comodo per un serif da display sui titoli e un sans sui
+numeri).
+
+**Il font va caricato dal tema HA**: dentro lo Shadow DOM le `@font-face`
+dichiarate da una card vengono ignorate, quindi la collezione non può caricarlo
+da sé. Se Jost non è disponibile si ricade sul sans di sistema.
+
+```yaml
+# esempio: titoli serif dal tema, numeri in Jost
+type: custom:ag-panel-card
+title: Produzione FV
+title_font: "'Cormorant Garamond', serif"
+value_font: "Jost, sans-serif"
+```
+
+### Spaziatura
+
+`gap` (spazio tra le card figlie, px) è disponibile su Panel, VStack e HStack;
+omesso vale 8px.
+
+Il Panel ha in più `padding`, che vale **solo per le card contenute**: l'header
+mantiene sempre il proprio spazio, quindi con `padding: 0` le card arrivano a
+filo del bordo mentre il titolo resta allineato dov'è. Omesso vale 16px ai lati.
+
+```yaml
+type: custom:ag-panel-card
+title: Produzione FV
+padding: 0     # solo le card figlie vanno a filo bordo
+gap: 4
+cards: [...]
+```
+
+**Allineamento delle card figlie.** Dentro un Panel le card AG (Bar, Entity,
+Battery) azzerano il proprio spazio orizzontale, perché lo fornisce già il
+Panel: così le righe si allineano al titolo invece di risultare rientrate, e si
+comportano come l'AG Separator Card, che non ha mai avuto spazio proprio. Fuori
+dal Panel — da sole o dentro VStack/HStack — mantengono i loro 16px.
 
 ## Sviluppo
 

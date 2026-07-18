@@ -17,6 +17,7 @@ export interface AgPanelCardConfig extends AgContainerCardConfig {
   summary_color?: string; // colore CSS del valore; vuoto = var(--accent-color)
   title_font?: string; // font-family CSS; vuoto = font del tema HA
   title_size?: number; // px
+  value_font?: string; // font di riepilogo e sottotitolo; default Jost
 }
 
 // Valori numerici di default, usati come fallback in render().

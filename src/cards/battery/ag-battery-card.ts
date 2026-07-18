@@ -3,7 +3,7 @@ import { customElement } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { AgBaseCard } from "../../base/ag-base-card";
 import { registerCustomCard } from "../../utils/register-card";
-import type { HomeAssistant, LovelaceCardEditor } from "../../types";
+import type { AgActionableConfig, HomeAssistant, LovelaceCardEditor } from "../../types";
 import {
   CARD_TYPE,
   CARD_NAME,
@@ -94,6 +94,18 @@ export class AgBatteryCard extends AgBaseCard<AgBatteryCardConfig> {
     return { rows: 2, columns: 6, min_rows: 2, min_columns: 3 };
   }
 
+  // Le azioni agiscono sull'entità carica batteria: la config non ha un campo
+  // `entity`, quindi lo forniamo qui a handleAction (default tap = more-info).
+  protected _actionConfig(): AgActionableConfig {
+    const config = this._config;
+    return {
+      entity: config?.battery_entity,
+      tap_action: config?.tap_action,
+      hold_action: config?.hold_action,
+      double_tap_action: config?.double_tap_action,
+    };
+  }
+
   // Colore configurato dall'utente, altrimenti quello del tema.
   private _color(kind: Severity | "charging"): string {
     const config = this._config;
@@ -118,11 +130,16 @@ export class AgBatteryCard extends AgBaseCard<AgBatteryCardConfig> {
     const powerObj = config.power_entity ? this.hass.states[config.power_entity] : undefined;
     const name =
       config.name || batteryObj?.attributes.friendly_name || config.battery_entity || "Batteria";
+    const interactive = this._hasAnyAction();
 
     // Entità obbligatorie configurate ma non presenti in hass.states.
     if (!batteryObj || !powerObj) {
       return html`
-        <ha-card>
+        <ha-card
+          class=${interactive ? "interactive" : ""}
+          @action=${this._handleAction}
+          .actionHandler=${this._actionHandlerDirective()}
+        >
           <div class="content">
             <div class="info">
               <div class="title">${name}</div>
@@ -190,18 +207,25 @@ export class AgBatteryCard extends AgBaseCard<AgBatteryCardConfig> {
     const cardSeverity: Severity = system?.severity ?? "normal";
 
     const titleFont = config.title_font?.trim();
+    const valueFont = config.value_font?.trim();
     const vars = styleMap({
       "--ag-gauge-color": gaugeColor,
       "--ag-flow-color": flowColor,
       "--ag-tint": this._color(cardSeverity),
       "--ag-title-size": `${config.title_size ?? DEFAULTS.title_size}px`,
-      // Impostata solo se configurata: senza la property il var() del CSS
+      // Impostate solo se configurate: senza la property il var() del CSS
       // ricade su `inherit`, cioè il font del tema HA.
       ...(titleFont ? { "--ag-title-font": titleFont } : {}),
+      ...(valueFont ? { "--ag-value-font": valueFont } : {}),
     });
 
     return html`
-      <ha-card class=${cardSeverity} style=${vars}>
+      <ha-card
+        class="${cardSeverity}${interactive ? " interactive" : ""}"
+        style=${vars}
+        @action=${this._handleAction}
+        .actionHandler=${this._actionHandlerDirective()}
+      >
         <div class="content">
           <div
             class="gauge"
@@ -249,6 +273,9 @@ export class AgBatteryCard extends AgBaseCard<AgBatteryCardConfig> {
       height: 100%;
       box-sizing: border-box;
     }
+    ha-card.interactive {
+      cursor: pointer;
+    }
 
     /* La tinta passa dalle custom property che ha-card già consuma, invece di
        sovrascriverne background e bordo: non dipende dai suoi interni.
@@ -274,11 +301,13 @@ export class AgBatteryCard extends AgBaseCard<AgBatteryCardConfig> {
       color: color-mix(in srgb, var(--ag-tint) 55%, var(--primary-text-color));
     }
 
+    /* Vedi ag-bar-card: il contenitore che ha uno spazio proprio azzera
+       --ag-item-padding-x, così le righe si allineano al titolo. */
     .content {
       display: flex;
       align-items: center;
       gap: 16px;
-      padding: 12px 16px;
+      padding: 12px var(--ag-item-padding-x, 16px);
       box-sizing: border-box;
       height: 100%;
     }
@@ -324,6 +353,7 @@ export class AgBatteryCard extends AgBaseCard<AgBatteryCardConfig> {
        centrare il blocco nell'anello. Come due item separati, invece,
        verrebbero centrati singolarmente e le baseline non combacerebbero. */
     .gauge-value {
+      font-family: var(--ag-value-font, inherit);
       font-size: 20px;
       font-weight: 600;
       color: var(--primary-text-color);
@@ -359,6 +389,7 @@ export class AgBatteryCard extends AgBaseCard<AgBatteryCardConfig> {
       display: flex;
       align-items: center;
       gap: 6px;
+      font-family: var(--ag-value-font, inherit);
       font-size: 13px;
       min-width: 0;
     }

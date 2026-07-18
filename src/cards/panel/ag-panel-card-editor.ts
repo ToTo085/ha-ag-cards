@@ -73,7 +73,27 @@ export class AgPanelCardEditor extends AgContainerCardEditor<AgPanelCardConfig> 
             },
           ],
         },
+        { name: "value_font", selector: { text: {} } },
+        {
+          name: "",
+          type: "grid",
+          schema: [
+            {
+              name: "padding",
+              selector: {
+                number: { min: 0, max: 48, step: 1, mode: "box", unit_of_measurement: "px" },
+              },
+            },
+            {
+              name: "gap",
+              selector: {
+                number: { min: 0, max: 48, step: 1, mode: "box", unit_of_measurement: "px" },
+              },
+            },
+          ],
+        },
         { name: "flat", selector: { boolean: {} } },
+        { name: "share_max", selector: { boolean: {} } },
       ],
     },
   ];
@@ -90,7 +110,11 @@ export class AgPanelCardEditor extends AgContainerCardEditor<AgPanelCardConfig> 
       summary_color: "Colore del valore",
       title_font: "Font del titolo",
       title_size: "Dimensione titolo",
+      value_font: "Font di valori e didascalie",
+      padding: "Spazio attorno alle card",
+      gap: "Spazio tra le card",
       flat: "Card figlie senza cornice",
+      share_max: "Massimo condiviso tra le barre",
     };
     // Le sezioni expandable/grid hanno name "": ricadono sul loro `title`.
     return labels[schema.name] ?? schema.title ?? schema.name;
@@ -108,7 +132,14 @@ export class AgPanelCardEditor extends AgContainerCardEditor<AgPanelCardConfig> 
       title_font:
         "Vuoto = font del tema. Es: 'Cormorant Garamond', serif — il font va caricato dal tema HA, la card non può caricarlo da sé.",
       title_size: "Dimensione del titolo. I serif da display stanno meglio sui 17-18px.",
+      value_font:
+        "Font di riepilogo e sottotitolo. Default 'Jost, sans-serif'; scrivi 'inherit' per usare il font del tema.",
+      padding:
+        "Spazio attorno alle sole card contenute. Vuoto = 16px ai lati. Con 0 arrivano a filo del bordo; il titolo resta dov'è.",
+      gap: "Spazio tra le card contenute. Vuoto = 8px.",
       flat: "Nasconde sfondo, bordo e ombra delle card contenute.",
+      share_max:
+        "Le ag-bar-card contenute impostate su 'Massimo del gruppo' si scalano tutte sulla capacità dichiarata più alta del gruppo. Con contenitori annidati vince il più interno che ha l'opzione attiva.",
     };
     return helpers[schema.name];
   };

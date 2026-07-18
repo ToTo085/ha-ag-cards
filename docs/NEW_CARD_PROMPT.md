@@ -21,6 +21,13 @@ Descrivi cosa deve fare la card e come si comporta.
 - **Entità supportate**: <!-- domini: light, sensor, switch, climate, media_player, qualsiasi... -->
 - **Dati mostrati**: <!-- stato, attributi specifici, unità di misura, icona, nome... -->
 - **Interazioni**: <!-- tap/hold, toggle, chiamata servizio, more-info, navigazione... -->
+  <!-- Le azioni tap/hold/double_tap sono già pronte nella base card: aggiungi
+       i campi tap_action/hold_action/double_tap_action alla config, la sezione
+       "Azioni" (selettore ui_action) all'editor e binda @action +
+       .actionHandler sul <ha-card> (vedi _template / ag-entity-card). Default:
+       tap = more-info. -->
+- **Entità dell'azione**: <!-- di norma `entity`; se la config usa un nome
+     diverso (es. battery_entity) sovrascrivi `_actionConfig()` nella card. -->
 - **Stati particolari da gestire**: <!-- unavailable, off, valori soglia, errori... -->
 
 ## 3. Opzioni di configurazione ⭐

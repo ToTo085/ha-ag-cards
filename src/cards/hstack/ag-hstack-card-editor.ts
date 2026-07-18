@@ -4,15 +4,31 @@ import { EDITOR_TYPE, type AgHstackCardConfig } from "./config";
 
 @customElement(EDITOR_TYPE)
 export class AgHstackCardEditor extends AgContainerCardEditor<AgHstackCardConfig> {
-  protected readonly _schema = [{ name: "flat", selector: { boolean: {} } }];
+  protected readonly _schema = [
+    { name: "flat", selector: { boolean: {} } },
+    { name: "share_max", selector: { boolean: {} } },
+    {
+      name: "gap",
+      selector: { number: { min: 0, max: 48, step: 1, mode: "box", unit_of_measurement: "px" } },
+    },
+  ];
 
   protected _computeLabel = (schema: { name: string; title?: string }): string =>
-    schema.name === "flat" ? "Card figlie senza cornice" : (schema.title ?? schema.name);
+    ({
+      flat: "Card figlie senza cornice",
+      share_max: "Massimo condiviso tra le barre",
+      gap: "Spazio tra le card",
+    })[schema.name] ??
+    schema.title ??
+    schema.name;
 
   protected _computeHelper = (schema: { name: string }): string | undefined =>
-    schema.name === "flat"
-      ? "Nasconde sfondo, bordo e ombra delle card contenute."
-      : undefined;
+    ({
+      flat: "Nasconde sfondo, bordo e ombra delle card contenute.",
+      share_max:
+        "Le ag-bar-card contenute impostate su 'Massimo del gruppo' si scalano tutte sulla capacità dichiarata più alta del gruppo. Con contenitori annidati vince il più interno che ha l'opzione attiva.",
+      gap: "Spazio tra le card contenute. Vuoto = 8px.",
+    })[schema.name];
 }
 
 declare global {

@@ -4,6 +4,7 @@ import { styleMap } from "lit/directives/style-map.js";
 import { formatNumber } from "custom-card-helpers";
 import { AgContainerCard, containerStyles } from "../../base/ag-container-card";
 import { registerCustomCard } from "../../utils/register-card";
+import { DEFAULT_VALUE_FONT } from "../../const";
 import { parseNumericState } from "../../utils/states";
 import { formatPower } from "../../utils/power";
 import type { LovelaceCardEditor } from "../../types";
@@ -26,6 +27,7 @@ export class AgPanelCard extends AgContainerCard<AgPanelCardConfig> {
   public static getStubConfig(): AgPanelCardConfig {
     return { type: `custom:${CARD_TYPE}`, title: "Pannello", cards: [] };
   }
+
 
   public getCardSize(): number | Promise<number> {
     // +1 per l'header rispetto alla somma dei figli calcolata dalla base.
@@ -77,6 +79,8 @@ export class AgPanelCard extends AgContainerCard<AgPanelCardConfig> {
     const hasHeader = Boolean(config.title || config.subtitle || hasSummary);
 
     const titleFont = config.title_font?.trim();
+    // I contenitori non hanno un DEFAULT_CONFIG: il default va applicato qui.
+    const valueFont = (config.value_font ?? DEFAULT_VALUE_FONT).trim();
     const summaryColor = config.summary_color?.trim();
     const vars = styleMap({
       "--ag-title-size": `${config.title_size ?? DEFAULTS.title_size}px`,
@@ -84,6 +88,7 @@ export class AgPanelCard extends AgContainerCard<AgPanelCardConfig> {
       // Impostate solo se configurate: senza la property il var() del CSS
       // ricade sul default (font del tema per il titolo, accent per il valore).
       ...(titleFont ? { "--ag-title-font": titleFont } : {}),
+      ...(valueFont ? { "--ag-value-font": valueFont } : {}),
       ...(summaryColor ? { "--ag-value-color": summaryColor } : {}),
     });
 
@@ -119,14 +124,32 @@ export class AgPanelCard extends AgContainerCard<AgPanelCardConfig> {
   static styles = [
     containerStyles,
     css`
+      /* Lo spazio interno non sta sulla ha-card ma, separatamente, su header e
+         contenitore dei figli: così un padding a 0 porta il contenuto a filo
+         bordo senza schiacciare anche il titolo. */
       ha-card {
         height: 100%;
         box-sizing: border-box;
-        padding: 12px 16px;
+        padding: 0;
       }
 
+      /* 12/16 come prima; i 10px in basso sostituiscono il vecchio margin. */
       .header {
-        margin-bottom: 10px;
+        padding: 12px 16px 10px;
+      }
+
+      /* Default equivalente al vecchio padding della ha-card. Con il padding a
+         0 in config i figli arrivano al bordo, header escluso. */
+      .children {
+        padding: var(--ag-children-padding, 0 16px 12px);
+      }
+
+      /* Le card AG figlie hanno un proprio spazio orizzontale: dentro il panel
+         va azzerato, altrimenti si somma a questo e le righe risultano
+         rientrate rispetto al titolo (il separator, che non ne ha, arriva
+         invece a filo: era l'incoerenza da togliere). */
+      .children > .child {
+        --ag-item-padding-x: 0;
       }
       .header-row {
         display: flex;
@@ -154,18 +177,21 @@ export class AgPanelCard extends AgContainerCard<AgPanelCardConfig> {
         flex: 0 0 auto;
       }
       .summary-label {
+        font-family: var(--ag-value-font, inherit);
         font-size: 11px;
         letter-spacing: 0.08em;
         text-transform: uppercase;
         color: var(--secondary-text-color);
       }
       .summary-value {
+        font-family: var(--ag-value-font, inherit);
         font-size: 15px;
         font-weight: 600;
         color: var(--ag-value-color, var(--accent-color));
         font-variant-numeric: tabular-nums;
       }
       .subtitle {
+        font-family: var(--ag-value-font, inherit);
         margin-top: 2px;
         font-size: 12px;
         color: var(--secondary-text-color);
