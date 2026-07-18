@@ -18,11 +18,6 @@ export interface AgContainerCardConfig extends LovelaceCardConfig {
    * risalire l'evento a un contenitore esterno.
    */
   share_max?: boolean;
-  /**
-   * Spazio interno in px. Assente = default della card (0 per le stack,
-   * 12/16 per il panel): con 0 i figli arrivano a filo del bordo.
-   */
-  padding?: number;
   /** Spazio tra le card figlie in px. Assente = 8. */
   gap?: number;
   cards?: LovelaceCardConfig[]; // default []
@@ -293,15 +288,8 @@ export abstract class AgContainerCard<
     // nome: va tenuto allineato a AG_GROUP_MAX_EVENT in ./ag-group-max.
     const shareMax = this._config?.share_max === true;
     const gap = this._config?.gap;
-    const padding = this._config?.padding;
-    // Impostate solo se configurate, così il var() del CSS tiene i default.
-    // Il padding vale SOLO per il contenitore dei figli: l'header del panel ha
-    // il proprio, così mettendo 0 il contenuto arriva a filo bordo ma il
-    // titolo resta allineato dov'è.
-    const vars = styleMap({
-      ...(gap !== undefined ? { "--ag-stack-gap": `${gap}px` } : {}),
-      ...(padding !== undefined ? { "--ag-children-padding": `${padding}px` } : {}),
-    });
+    // Impostata solo se configurata, così il var() del CSS tiene il default.
+    const vars = styleMap(gap !== undefined ? { "--ag-stack-gap": `${gap}px` } : {});
     return html`
       <div
         class="children ${this.direction}${flat ? " flat" : ""}"
@@ -328,8 +316,6 @@ export const containerStyles = css`
   .children {
     display: flex;
     gap: var(--ag-stack-gap, 8px);
-    /* Il panel non imposta questa property: il suo spazio sta sulla ha-card. */
-    padding: var(--ag-children-padding, 0);
     box-sizing: border-box;
   }
   .children.column {
@@ -343,11 +329,17 @@ export const containerStyles = css`
     flex: 1 1 0;
     min-width: 0;
   }
+  /* Senza cornice il figlio fa parte del genitore, quindi è il genitore a
+     dargli lo spazio orizzontale: le card AG azzerano il proprio e si
+     allineano al titolo, come fa da sempre il separator. Con la cornice (flat
+     a false) il figlio torna autonomo e riprende i suoi 16px, esattamente come
+     se stesse fuori da un contenitore. */
   .children.flat > .child {
     --ha-card-background: transparent;
     --ha-card-border-width: 0;
     --ha-card-box-shadow: none;
     --ha-card-border-color: transparent;
+    --ag-item-padding-x: 0;
   }
   .children-error {
     color: var(--error-color, #db4437);

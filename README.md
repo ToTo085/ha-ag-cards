@@ -154,23 +154,25 @@ value_font: "Jost, sans-serif"
 `gap` (spazio tra le card figlie, px) è disponibile su Panel, VStack e HStack;
 omesso vale 8px.
 
-Il Panel ha in più `padding`, che vale **solo per le card contenute**: l'header
-mantiene sempre il proprio spazio, quindi con `padding: 0` le card arrivano a
-filo del bordo mentre il titolo resta allineato dov'è. Omesso vale 16px ai lati.
-
 ```yaml
 type: custom:ag-panel-card
 title: Produzione FV
-padding: 0     # solo le card figlie vanno a filo bordo
 gap: 4
 cards: [...]
 ```
 
-**Allineamento delle card figlie.** Dentro un Panel le card AG (Bar, Entity,
-Battery) azzerano il proprio spazio orizzontale, perché lo fornisce già il
-Panel: così le righe si allineano al titolo invece di risultare rientrate, e si
-comportano come l'AG Separator Card, che non ha mai avuto spazio proprio. Fuori
-dal Panel — da sole o dentro VStack/HStack — mantengono i loro 16px.
+**Allineamento delle card figlie**, legato a `flat` (*Card figlie senza cornice*):
+
+- **`flat: true`** (default) — il figlio non ha cornice, quindi fa visivamente
+  parte del contenitore ed è questo a dargli lo spazio: le card AG (Bar, Entity,
+  Battery) azzerano il proprio spazio orizzontale e si allineano al titolo,
+  come fa da sempre l'AG Separator Card. Senza questo si sommerebbero due
+  spaziature e le righe risulterebbero rientrate rispetto al titolo.
+- **`flat: false`** — il figlio mantiene la propria cornice ed è di nuovo
+  autonomo: riprende i suoi 16px, esattamente come se stesse fuori da un
+  contenitore.
+
+Vale per Panel, VStack e HStack allo stesso modo.
 
 ## Sviluppo
 

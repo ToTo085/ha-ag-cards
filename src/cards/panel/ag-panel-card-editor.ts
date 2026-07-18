@@ -75,22 +75,8 @@ export class AgPanelCardEditor extends AgContainerCardEditor<AgPanelCardConfig> 
         },
         { name: "value_font", selector: { text: {} } },
         {
-          name: "",
-          type: "grid",
-          schema: [
-            {
-              name: "padding",
-              selector: {
-                number: { min: 0, max: 48, step: 1, mode: "box", unit_of_measurement: "px" },
-              },
-            },
-            {
-              name: "gap",
-              selector: {
-                number: { min: 0, max: 48, step: 1, mode: "box", unit_of_measurement: "px" },
-              },
-            },
-          ],
+          name: "gap",
+          selector: { number: { min: 0, max: 48, step: 1, mode: "box", unit_of_measurement: "px" } },
         },
         { name: "flat", selector: { boolean: {} } },
         { name: "share_max", selector: { boolean: {} } },
@@ -111,7 +97,6 @@ export class AgPanelCardEditor extends AgContainerCardEditor<AgPanelCardConfig> 
       title_font: "Font del titolo",
       title_size: "Dimensione titolo",
       value_font: "Font di valori e didascalie",
-      padding: "Spazio attorno alle card",
       gap: "Spazio tra le card",
       flat: "Card figlie senza cornice",
       share_max: "Massimo condiviso tra le barre",
@@ -134,8 +119,6 @@ export class AgPanelCardEditor extends AgContainerCardEditor<AgPanelCardConfig> 
       title_size: "Dimensione del titolo. I serif da display stanno meglio sui 17-18px.",
       value_font:
         "Font di riepilogo e sottotitolo. Default 'Jost, sans-serif'; scrivi 'inherit' per usare il font del tema.",
-      padding:
-        "Spazio attorno alle sole card contenute. Vuoto = 16px ai lati. Con 0 arrivano a filo del bordo; il titolo resta dov'è.",
       gap: "Spazio tra le card contenute. Vuoto = 8px.",
       flat: "Nasconde sfondo, bordo e ombra delle card contenute.",
       share_max:

@@ -138,19 +138,11 @@ export class AgPanelCard extends AgContainerCard<AgPanelCardConfig> {
         padding: 12px 16px 10px;
       }
 
-      /* Default equivalente al vecchio padding della ha-card. Con il padding a
-         0 in config i figli arrivano al bordo, header escluso. */
+      /* Equivalente al vecchio padding della ha-card, che ora e' a 0. */
       .children {
-        padding: var(--ag-children-padding, 0 16px 12px);
+        padding: 0 16px 12px;
       }
 
-      /* Le card AG figlie hanno un proprio spazio orizzontale: dentro il panel
-         va azzerato, altrimenti si somma a questo e le righe risultano
-         rientrate rispetto al titolo (il separator, che non ne ha, arriva
-         invece a filo: era l'incoerenza da togliere). */
-      .children > .child {
-        --ag-item-padding-x: 0;
-      }
       .header-row {
         display: flex;
         align-items: baseline;
