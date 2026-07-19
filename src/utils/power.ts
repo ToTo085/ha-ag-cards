@@ -52,3 +52,20 @@ export function formatPower(watts: number, locale: HomeAssistant["locale"]): str
   }
   return `${formatNumber(abs, locale, { maximumFractionDigits: 0 })} W`;
 }
+
+/**
+ * Come formatPower(), ma SEMPRE in kW con 2 decimali ("6,07 kW", "0,00 kW").
+ *
+ * Serve alle card che incolonnano più potenze: passando a W sotto il kilowatt
+ * si otterrebbero righe con unità diverse e larghezze che saltano. Il prezzo è
+ * che un carico da 30 W si legge "0,03 kW".
+ *
+ * Come formatPower() lavora in valore ASSOLUTO: il segno lo rimette il
+ * chiamante. Senza, un -4 W renderizzerebbe "-0,00 kW".
+ */
+export function formatPowerKw(watts: number, locale: HomeAssistant["locale"]): string {
+  return `${formatNumber(Math.abs(watts) / 1000, locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} kW`;
+}

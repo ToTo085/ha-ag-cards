@@ -11,6 +11,7 @@ Ogni card include un **popup di configurazione visuale** (editor `ha-form`), cos
 | AG Entity Card | `custom:ag-entity-card` | Mostra icona, nome e stato di una singola entità. |
 | AG Battery Card | `custom:ag-battery-card` | Stato di una batteria domestica: carica, potenza, rete e backup. |
 | AG Bar Card | `custom:ag-bar-card` | Barra orizzontale con nome, descrizione e valore; massimo proprio o condiviso col gruppo. |
+| AG Energy Card | `custom:ag-energy-card` | Verdetto sullo scambio con la rete e copertura del carico, in due layout. |
 | AG Panel Card | `custom:ag-panel-card` | Pannello con intestazione (titolo, sottotitolo, valore o somma a destra) e card figlie impilate. |
 | AG VStack Card | `custom:ag-vstack-card` | Pila verticale di card figlie senza cornice ("flat"). |
 | AG HStack Card | `custom:ag-hstack-card` | Fila orizzontale di card figlie a larghezza uguale, senza cornice. |
@@ -46,7 +47,7 @@ name: Esempio
 
 ### Azioni (tap / pressione prolungata / doppio tap)
 
-Le card che mostrano un'entità (**Entity**, **Battery** e **Bar**) supportano le azioni
+Le card che mostrano un'entità (**Entity**, **Battery**, **Bar** ed **Energy**) supportano le azioni
 standard di Home Assistant. **Di default, il tap apre il pannello nativo di
 dettaglio** (`more-info`) dell'entità; pressione prolungata e doppio tap restano
 inattivi finché non li configuri. Tutto è impostabile dall'editor (sezione
@@ -66,7 +67,57 @@ double_tap_action:
 
 Sono supportate le azioni HA: `more-info` (default), `toggle`, `call-service`,
 `navigate`, `url`, `none`. Sulla Battery card le azioni agiscono sull'entità
-della carica (`battery_entity`).
+della carica (`battery_entity`), sulla Energy card su quella della rete
+(`grid_entity`).
+
+### Energia e autoconsumo
+
+L'**AG Energy Card** legge le potenze dell'impianto e risponde alla domanda di
+tutti i giorni: *sto immettendo o prelevando, e chi sta alimentando la casa?*
+
+```yaml
+type: custom:ag-energy-card
+layout: verdict            # oppure: coverage
+name: Il Casale
+phase: TRIFASE
+grid_entity: sensor.potenza_rete       # obbligatoria
+pv_entity: sensor.potenza_fotovoltaico # obbligatoria
+battery_entity: sensor.potenza_batteria
+house_entity: sensor.potenza_casa      # vuota = ricavata dal bilancio
+```
+
+**Due layout, stessi dati.** `verdict` mette in evidenza la parola di stato e i
+kW di rete, con la riga "Casa alimentata da" e le metriche FV / Casa / Batteria.
+`coverage` mostra una barra con le quote di consumo coperte da FV, batteria e
+rete, più la legenda in kW.
+
+**I quattro stati**, decisi dalla potenza di rete e dalla presenza di FV:
+
+| Rete | FV | Verdetto | Significato |
+|------|----|----------|-------------|
+| in immissione | — | **Esporto** | immetti il surplus in rete |
+| in pari (zona morta) | — | **Autoconsumo** | FV e batteria coprono la casa |
+| in prelievo | attivo | **Acquisto** | compri, ma il sole aiuta |
+| in prelievo | ≈ 0 | **Prelievo** | dipendi dalla rete, niente sole |
+
+Lo stato colora verdetto, icona e numero; **sfondo e bordo restano sempre quelli
+del tema**, così la card non resta accesa tutta la notte.
+
+> **Le convenzioni di segno sono la svista più facile.** La card si aspetta
+> `grid_entity` **positiva in prelievo** e negativa in immissione, e
+> `battery_entity` **positiva in scarica** e negativa in carica. Se il tuo
+> inverter fa il contrario, attiva `invert_grid` / `invert_battery`: è l'unico
+> errore che non produce un `–` ma un verdetto ribaltato e per nulla sospetto.
+
+`deadband` (default 100 W) è l'ampiezza della zona in cui la rete è considerata
+in pari: alzala se il verdetto sfarfalla attorno allo zero. `power_unit`
+(default `kw`) tiene tutti i valori in kW con due decimali, così restano
+incolonnati; con `auto` si passa a W sotto il kilowatt.
+
+Senza `house_entity` il consumo di casa si ricava dal bilancio
+`FV + Batteria + Rete`. Nella barra di copertura, la parte di consumo che le
+fonti non spiegano resta **vuota** invece di essere ridistribuita: se vedi un
+buco stabile, sono i sensori che non si accordano.
 
 ### Massimo condiviso tra più barre
 
@@ -133,9 +184,9 @@ Note:
 
 Tutte le card espongono `value_font`, che vale per valori, nomi ed etichette.
 Il default è `Jost, sans-serif`; scrivi `inherit` per usare il font del tema.
-Panel e Battery hanno in più `title_font` per il solo titolo, che di default
-resta quello del tema (comodo per un serif da display sui titoli e un sans sui
-numeri).
+Panel, Battery ed Energy hanno in più `title_font` per il solo titolo (sulla
+Energy vale anche per il verdetto), che di default resta quello del tema
+(comodo per un serif da display sui titoli e un sans sui numeri).
 
 **Il font va caricato dal tema HA**: dentro lo Shadow DOM le `@font-face`
 dichiarate da una card vengono ignorate, quindi la collezione non può caricarlo
