@@ -1,6 +1,7 @@
 import { html, css, nothing, type TemplateResult } from "lit";
 import { customElement } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
+import { fireEvent } from "custom-card-helpers";
 import { AgBaseCard } from "../../base/ag-base-card";
 import { registerCustomCard } from "../../utils/register-card";
 import type { AgActionableConfig, HomeAssistant, LovelaceCardEditor } from "../../types";
@@ -21,6 +22,7 @@ import {
   type EnergySnapshot,
   type EnergyState,
   type OptionalPower,
+  type SocStatus,
   type SourceKey,
 } from "./logic";
 import { parseNumericState } from "../../utils/states";
@@ -59,6 +61,14 @@ const SOURCE_ICON: Record<SourceKey, string> = {
   pv: "mdi:white-balance-sunny",
   battery: "mdi:battery-charging",
   grid: "mdi:transmission-tower",
+};
+
+// Testo leggibile dello stato batteria, per l'aria-label dell'indicatore.
+const SOC_STATUS_LABEL: Record<SocStatus, string> = {
+  low: "carica bassa",
+  charging: "in carica",
+  discharging: "in scarica",
+  idle: "a riposo",
 };
 
 /** Perche' una lettura e' fallita, dal problema piu' esterno al piu' interno. */
@@ -137,15 +147,16 @@ export class AgEnergyCard extends AgBaseCard<AgEnergyCardConfig> {
   }
 
   public getCardSize(): number {
-    return this._config?.layout === "coverage" ? 4 : 3;
+    return 4;
   }
 
   // Il layout coverage vuole larghezza: barra impilata e legenda a tre voci si
-  // comprimono male sotto le 12 colonne.
+  // comprimono male sotto le 12 colonne. Il verdetto sta su 6, ma con la riga
+  // di flusso e le metriche vuole le stesse 4 righe.
   public getGridOptions(): Record<string, number | string> {
     return this._config?.layout === "coverage"
       ? { rows: 4, columns: 12, min_rows: 3, min_columns: 6 }
-      : { rows: 3, columns: 6, min_rows: 2, min_columns: 6 };
+      : { rows: 4, columns: 6, min_rows: 3, min_columns: 6 };
   }
 
   // Le azioni agiscono sull'entità della rete: è il numero in evidenza in
@@ -197,6 +208,7 @@ export class AgEnergyCard extends AgBaseCard<AgEnergyCardConfig> {
       config?.pv_entity,
       config?.battery_entity,
       config?.house_entity,
+      config?.soc_entity,
     ].map((id) => (id && states ? states[id] : undefined));
   }
 
@@ -229,6 +241,17 @@ export class AgEnergyCard extends AgBaseCard<AgEnergyCardConfig> {
     return { configured: true, watts: reading.ok ? reading.watts : undefined };
   }
 
+  /**
+   * Stato di carica in percento. Non passa da toWatts: è una percentuale, non
+   * una potenza, e un'unità diversa da "%" non è un motivo per scartarla.
+   */
+  private _readSoc(entityId: string | undefined): number | undefined {
+    if (!entityId) {
+      return undefined;
+    }
+    return parseNumericState(this.hass?.states[entityId]?.state);
+  }
+
   /** Formatta una potenza secondo `power_unit`. `signed` rimette il segno. */
   private _power(watts: number | undefined, signed = false): string {
     if (watts === undefined || !this.hass) {
@@ -254,6 +277,25 @@ export class AgEnergyCard extends AgBaseCard<AgEnergyCardConfig> {
             ? config?.color_buy
             : config?.color_draw;
     return custom?.trim() || STATE_COLORS[state];
+  }
+
+  /**
+   * Colore del riempimento della batteria. Riusa i colori già configurabili
+   * invece di aggiungerne altri quattro: in carica prende quello del FV (è
+   * tipicamente il surplus che la riempie), in scarica il proprio, e sotto la
+   * soglia quello di "Prelievo", che è il colore di allarme della card.
+   */
+  private _socColor(status: SocStatus): string {
+    if (status === "low") {
+      return this._stateColor("draw");
+    }
+    if (status === "charging") {
+      return this._sourceColor("pv");
+    }
+    if (status === "discharging") {
+      return this._sourceColor("battery");
+    }
+    return "var(--secondary-text-color)";
   }
 
   private _sourceColor(key: SourceKey): string {
@@ -304,8 +346,12 @@ export class AgEnergyCard extends AgBaseCard<AgEnergyCardConfig> {
         pv: pv.watts,
         battery: this._readOptional(config.battery_entity, config.invert_battery),
         house: this._readOptional(config.house_entity),
+        soc: this._readSoc(config.soc_entity),
       },
-      { eps: config.deadband ?? DEFAULTS.deadband }
+      {
+        eps: config.deadband ?? DEFAULTS.deadband,
+        socLow: config.soc_low ?? DEFAULTS.soc_low,
+      }
     );
 
     return this._shell(
@@ -349,6 +395,42 @@ export class AgEnergyCard extends AgBaseCard<AgEnergyCardConfig> {
     `;
   }
 
+  /**
+   * Mini-batteria verticale che si riempie dal basso, con la percentuale
+   * accanto. Omessa del tutto quando la carica non è leggibile: una batteria
+   * disegnata vuota si confonderebbe con una batteria scarica.
+   */
+  private _renderSoc(snapshot: EnergySnapshot): TemplateResult | typeof nothing {
+    const { soc, socStatus } = snapshot;
+    if (soc === undefined || socStatus === undefined) {
+      return nothing;
+    }
+    const rounded = Math.round(soc);
+    return html`
+      <span
+        class="soc"
+        role="meter"
+        aria-label="Carica batteria"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow=${rounded}
+        aria-valuetext="${rounded}%, ${SOC_STATUS_LABEL[socStatus]}"
+      >
+        <span
+          class="soc-cell"
+          style=${styleMap({
+            "--ag-soc-fill": `${soc}%`,
+            "--ag-soc-color": this._socColor(socStatus),
+          })}
+          aria-hidden="true"
+        >
+          <span class="soc-level"></span>
+        </span>
+        <span class="soc-text" aria-hidden="true">${rounded}%</span>
+      </span>
+    `;
+  }
+
   /** Layout 1a: verdetto in evidenza, provenienza a parole, tre metriche. */
   private _renderVerdict(name: string, snapshot: EnergySnapshot): TemplateResult {
     const config = this._config;
@@ -368,7 +450,10 @@ export class AgEnergyCard extends AgBaseCard<AgEnergyCardConfig> {
       <div class="content verdict">
         <div class="head">
           <span class="plant" title=${name}>${name}</span>
-          ${config?.phase ? html`<span class="phase">${config.phase}</span>` : nothing}
+          <span class="head-right">
+            ${config?.phase ? html`<span class="phase">${config.phase}</span>` : nothing}
+            ${this._renderSoc(snapshot)}
+          </span>
         </div>
 
         <div class="verdict-row">
@@ -390,31 +475,120 @@ export class AgEnergyCard extends AgBaseCard<AgEnergyCardConfig> {
             `
           : nothing}
 
+        ${this._renderFlow(snapshot)}
+
         <div class="metrics">
-          <div class="metric">
-            <span class="metric-label">
-              <ha-icon .icon=${SOURCE_ICON.pv}></ha-icon>
-              <span>FV</span>
-            </span>
-            <span class="metric-value">${this._power(snapshot.pv)}</span>
-          </div>
-          <div class="metric">
-            <span class="metric-label">
-              <ha-icon icon="mdi:home-outline"></ha-icon>
-              <span>CASA</span>
-            </span>
-            <span class="metric-value">${this._power(snapshot.house)}</span>
-          </div>
-          <div class="metric">
-            <span class="metric-label">
-              <ha-icon .icon=${SOURCE_ICON.battery}></ha-icon>
-              <span>BATT</span>
-            </span>
-            <span class="metric-value ${batteryClass}">${this._power(battery, true)}</span>
-          </div>
+          ${this._renderMetric("FV", SOURCE_ICON.pv, this._power(snapshot.pv), "", config?.pv_entity)}
+          ${this._renderMetric(
+            "CASA",
+            "mdi:home-outline",
+            this._power(snapshot.house),
+            "",
+            config?.house_entity
+          )}
+          ${this._renderMetric(
+            "BATT",
+            SOURCE_ICON.battery,
+            this._power(battery, true),
+            batteryClass,
+            config?.battery_entity
+          )}
         </div>
       </div>
     `;
+  }
+
+  /**
+   * Riga Sorgente -> Casa -> Rete: due segmenti a puntini che scorrono nella
+   * direzione reale dell'energia.
+   *
+   * aria-hidden: non aggiunge nulla a un lettore di schermo, che ha già il
+   * verdetto, l'etichetta della rete e la riga "Casa alimentata da" in testo.
+   */
+  private _renderFlow(snapshot: EnergySnapshot): TemplateResult {
+    const { flow } = snapshot;
+    const gridClass =
+      flow.grid === "off" ? "off" : flow.grid === "reverse" ? "on reverse" : "on";
+    return html`
+      <div class="flow" aria-hidden="true">
+        <ha-icon
+          class="flow-node ${flow.source ? "live" : ""}"
+          .icon=${SOURCE_ICON[flow.source ?? "pv"]}
+        ></ha-icon>
+        <span class="flow-seg ${flow.toHouse ? "on" : "off"}"></span>
+        <ha-icon class="flow-node live" icon="mdi:home-outline"></ha-icon>
+        <span class="flow-seg ${gridClass}"></span>
+        <ha-icon class="flow-node ${flow.grid === "off" ? "" : "live"}" .icon=${SOURCE_ICON.grid}></ha-icon>
+      </div>
+    `;
+  }
+
+  /**
+   * Una mini-metrica. Con un'entità dietro diventa cliccabile e apre il
+   * more-info di quella entità: `house_entity` e `battery_entity` sono
+   * facoltative, quindi la riga resta statica quando non ci sono.
+   */
+  private _renderMetric(
+    label: string,
+    icon: string,
+    value: string,
+    valueClass: string,
+    entityId: string | undefined
+  ): TemplateResult {
+    const body = html`
+      <span class="metric-label">
+        <ha-icon .icon=${icon}></ha-icon>
+        <span>${label}</span>
+      </span>
+      <span class="metric-value ${valueClass}">${value}</span>
+    `;
+
+    if (!entityId) {
+      return html`<div class="metric">${body}</div>`;
+    }
+    return html`
+      <div
+        class="metric interactive"
+        role="button"
+        tabindex="0"
+        aria-label="Dettagli ${label}"
+        @click=${(ev: Event) => this._openMoreInfo(ev, entityId)}
+        @keydown=${(ev: KeyboardEvent) => this._metricKeydown(ev, entityId)}
+        @mousedown=${this._stopGesture}
+        @touchstart=${this._stopGesture}
+        @touchend=${this._stopGesture}
+      >
+        ${body}
+      </div>
+    `;
+  }
+
+  /**
+   * L'action handler della card ascolta click, touch e keydown sulla
+   * <ha-card>: senza fermare qui la propagazione il tap su una metrica
+   * aprirebbe il more-info della rete invece che quello della metrica.
+   */
+  private _openMoreInfo(ev: Event, entityId: string): void {
+    ev.stopPropagation();
+    fireEvent(this, "hass-more-info", { entityId });
+  }
+
+  private _metricKeydown(ev: KeyboardEvent, entityId: string): void {
+    if (ev.key !== "Enter" && ev.key !== " ") {
+      return;
+    }
+    // Senza preventDefault lo spazio scrollerebbe la dashboard.
+    ev.preventDefault();
+    this._openMoreInfo(ev, entityId);
+  }
+
+  /**
+   * Ferma i gesti prima che raggiungano la <ha-card>, senza agire: il tap vero
+   * lo gestisce @click. Su touch serve davvero — l'handler della card fa
+   * preventDefault sul touchend e il click sintetico non arriverebbe mai.
+   */
+  private _stopGesture(ev: Event): void {
+    ev.stopPropagation();
   }
 
   /** Layout 1b: barra di provenienza del carico, legenda e code condizionali. */
@@ -433,9 +607,12 @@ export class AgEnergyCard extends AgBaseCard<AgEnergyCardConfig> {
       <div class="content coverage">
         <div class="head">
           <span class="plant" title=${name}>${name}</span>
-          <span class="verdict-tag">
-            <span>${STATE_LABEL[snapshot.state]}</span>
-            <ha-icon .icon=${STATE_ICON[snapshot.state]}></ha-icon>
+          <span class="head-right">
+            ${this._renderSoc(snapshot)}
+            <span class="verdict-tag">
+              <span>${STATE_LABEL[snapshot.state]}</span>
+              <ha-icon .icon=${STATE_ICON[snapshot.state]}></ha-icon>
+            </span>
           </span>
         </div>
 
@@ -560,6 +737,63 @@ export class AgEnergyCard extends AgBaseCard<AgEnergyCardConfig> {
       color: var(--secondary-text-color);
       flex: 0 0 auto;
     }
+    .head-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    /* -- Indicatore di carica batteria --------------------------------- */
+    .soc {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex: 0 0 auto;
+    }
+    /* La cella è il contenitore del livello: il contorno resta neutro e solo
+       il riempimento prende il colore dello stato, così la lettura è
+       "quanta ne resta" e non "che colore ha la batteria". */
+    .soc-cell {
+      position: relative;
+      width: 9px;
+      height: 15px;
+      box-sizing: border-box;
+      border: 1.5px solid var(--secondary-text-color);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    /* Il polo positivo in cima, che rende il glifo leggibile come batteria. */
+    .soc-cell::before {
+      content: "";
+      position: absolute;
+      top: -4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 2px;
+      border-radius: 1px 1px 0 0;
+      background-color: var(--secondary-text-color);
+    }
+    .soc-level {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: var(--ag-soc-fill, 0%);
+      background-color: var(--ag-soc-color, var(--secondary-text-color));
+      transition:
+        height 0.4s ease-out,
+        background-color 0.3s ease;
+    }
+    .soc-text {
+      font-family: var(--ag-value-font, inherit);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary-text-color);
+      font-variant-numeric: tabular-nums;
+    }
+
     .verdict-tag {
       display: flex;
       align-items: center;
@@ -645,6 +879,57 @@ export class AgEnergyCard extends AgBaseCard<AgEnergyCardConfig> {
       white-space: nowrap;
     }
 
+    /* -- Indicatore di flusso (layout 1a) ------------------------------ */
+    .flow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 12px 0;
+    }
+    .flow-node {
+      flex: 0 0 auto;
+      color: var(--disabled-text-color, #bdbdbd);
+      --mdc-icon-size: 16px;
+      transition: color 0.3s ease;
+    }
+    .flow-node.live {
+      color: var(--secondary-text-color);
+    }
+    /* I puntini sono un gradiente ripetuto, non elementi: il segmento si
+       allunga quanto serve senza doverne calcolare il numero. Animare
+       background-position sposta i puntini senza toccare il layout. */
+    .flow-seg {
+      flex: 1 1 auto;
+      height: 3px;
+      min-width: 0;
+      background-image: radial-gradient(
+        circle,
+        currentColor 1.5px,
+        transparent 1.6px
+      );
+      background-size: 9px 3px;
+      background-repeat: repeat-x;
+      background-position: 0 center;
+      color: var(--divider-color, #e0e0e0);
+      transition: color 0.3s ease;
+    }
+    .flow-seg.on {
+      color: var(--ag-state-color);
+      animation: ag-flow 0.9s linear infinite;
+    }
+    /* L'unico segmento che cambia verso è quello della rete, in prelievo. */
+    .flow-seg.reverse {
+      animation-direction: reverse;
+    }
+    @keyframes ag-flow {
+      from {
+        background-position: 0 center;
+      }
+      to {
+        background-position: 9px center;
+      }
+    }
+
     /* -- Mini-metriche (layout 1a) ------------------------------------- */
     /* Tre colonne uguali: i valori restano incolonnati anche cambiando
        larghezza. Lo sfondo è ricavato dal testo del tema, così funziona su
@@ -666,6 +951,19 @@ export class AgEnergyCard extends AgBaseCard<AgEnergyCardConfig> {
     }
     .metric + .metric {
       border-left: 1px solid var(--divider-color, #e0e0e0);
+    }
+    /* Solo le metriche con un'entità dietro sono cliccabili: senza affordance
+       le altre sembrerebbero rotte. */
+    .metric.interactive {
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .metric.interactive:hover {
+      background-color: color-mix(in srgb, var(--primary-text-color) 7%, transparent);
+    }
+    .metric.interactive:focus-visible {
+      outline: 2px solid var(--ag-state-color);
+      outline-offset: -2px;
     }
     .metric-label {
       display: flex;
@@ -838,9 +1136,14 @@ export class AgEnergyCard extends AgBaseCard<AgEnergyCardConfig> {
       color: var(--secondary-text-color);
     }
 
+    /* I puntini restano fermi ma il colore continua a dire dove va l'energia. */
     @media (prefers-reduced-motion: reduce) {
-      .seg {
+      .seg,
+      .soc-level {
         transition: none;
+      }
+      .flow-seg.on {
+        animation: none;
       }
     }
   `;

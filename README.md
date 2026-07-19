@@ -83,13 +83,32 @@ phase: TRIFASE
 grid_entity: sensor.potenza_rete       # obbligatoria
 pv_entity: sensor.potenza_fotovoltaico # obbligatoria
 battery_entity: sensor.potenza_batteria
+soc_entity: sensor.carica_batteria     # % 0-100, mostra la mini-batteria
 house_entity: sensor.potenza_casa      # vuota = ricavata dal bilancio
 ```
 
 **Due layout, stessi dati.** `verdict` mette in evidenza la parola di stato e i
-kW di rete, con la riga "Casa alimentata da" e le metriche FV / Casa / Batteria.
-`coverage` mostra una barra con le quote di consumo coperte da FV, batteria e
-rete, più la legenda in kW.
+kW di rete, con la riga "Casa alimentata da", l'indicatore di flusso e le
+metriche FV / Casa / Batteria. `coverage` mostra una barra con le quote di
+consumo coperte da FV, batteria e rete, più la legenda in kW.
+
+**Carica batteria.** Con `soc_entity` compare in testata una mini-batteria che
+si riempie dal basso, con la percentuale accanto. Il riempimento è oro mentre
+carica, verde in scarica, neutro a riposo, e passa al colore di allarme sotto
+`soc_low` (default 15 %) **anche mentre sta caricando**: quel che conta è
+quanta autonomia resta. Senza `soc_entity` l'indicatore è omesso del tutto.
+
+**Indicatore di flusso** (solo `verdict`). La riga `Sorgente → Casa → Rete`
+mostra due segmenti a puntini che scorrono nella direzione reale dell'energia:
+verso Casa quando le fonti la alimentano, verso la Rete quando si esporta, e
+**dalla Rete verso Casa** quando si preleva. Dentro la zona morta il segmento
+della rete è spento. Il primo nodo mostra chi sta davvero producendo: col FV
+fermo di notte compare l'icona della batteria.
+
+**Dettagli al tap.** Le tre metriche in fondo al layout `verdict` sono
+cliccabili e aprono il more-info dell'entità corrispondente (FV, Casa,
+Batteria); restano statiche quando l'entità non è configurata. Il tap sul resto
+della card apre invece il more-info della rete.
 
 **I quattro stati**, decisi dalla potenza di rete e dalla presenza di FV:
 

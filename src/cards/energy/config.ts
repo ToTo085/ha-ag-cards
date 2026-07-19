@@ -27,6 +27,8 @@ export interface AgEnergyCardConfig extends LovelaceCardConfig {
   pv_entity?: string; // obbligatoria, validata in setConfig()
   battery_entity?: string; // opzionale
   house_entity?: string; // opzionale; vuota = ricavata dal bilancio
+  soc_entity?: string; // opzionale: stato di carica batteria in % (0-100)
+  soc_low?: number; // % sotto cui la carica e' critica
   // Le convenzioni di segno degli inverter sono divise: vedi la nota sotto.
   invert_grid?: boolean;
   invert_battery?: boolean;
@@ -59,6 +61,9 @@ export const DEFAULTS = {
   // 100 W = la banda morta di 0,1 kW della specifica. E' anche il valore da
   // alzare se il verdetto sfarfalla attorno allo zero.
   deadband: 100,
+  // Sotto questa carica l'indicatore passa al colore di allarme, comunque
+  // stia andando la batteria: e' l'unica soglia che scavalca carica/scarica.
+  soc_low: 15,
   title_size: 15,
   bar_height: 10,
 } as const;

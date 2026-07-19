@@ -24,6 +24,24 @@ export type EnergyState = "export" | "self" | "buy" | "draw";
 
 export type SourceKey = "pv" | "battery" | "grid";
 
+/** Come sta andando la batteria, per il colore dell'indicatore di carica. */
+export type SocStatus = "low" | "charging" | "discharging" | "idle";
+
+/**
+ * Verso di un segmento dell'indicatore di flusso.
+ * "forward" = da sinistra a destra nella riga Sorgente -> Casa -> Rete.
+ */
+export type FlowDirection = "forward" | "reverse" | "off";
+
+export interface FlowIndicator {
+  /** Fonte locale che alimenta la casa: da' l'icona del primo nodo. */
+  source: SourceKey | undefined;
+  /** Segmento Sorgente -> Casa acceso. */
+  toHouse: boolean;
+  /** Segmento Casa <-> Rete: forward = si esporta, reverse = si preleva. */
+  grid: FlowDirection;
+}
+
 /**
  * Ordine con cui le fonti coprono il carico: prima il FV, poi la batteria,
  * infine la rete. E' anche l'ordine dei segmenti della barra e delle voci di
@@ -48,11 +66,15 @@ export interface EnergyInput {
   pv: number;
   battery: OptionalPower;
   house: OptionalPower;
+  /** Stato di carica in %, gia' letto dall'entita' dedicata. */
+  soc: number | undefined;
 }
 
 export interface EnergyOptions {
   /** Banda morta in W attorno allo zero della rete. */
   eps: number;
+  /** % di carica sotto cui la batteria e' in allarme. */
+  socLow: number;
 }
 
 export interface Provenance {
@@ -90,6 +112,11 @@ export interface EnergySnapshot {
   surplus: number | undefined;
   /** Potenza assorbita dalla batteria, solo mentre carica. */
   charging: number | undefined;
+  /** Carica in %, clampata 0-100. undefined = entita' non configurata o illeggibile. */
+  soc: number | undefined;
+  /** undefined esattamente quando `soc` e' undefined. */
+  socStatus: SocStatus | undefined;
+  flow: FlowIndicator;
 }
 
 const SEVERITY: Record<EnergyState, Severity> = {
@@ -223,6 +250,55 @@ export function roundShares(share: Record<SourceKey, number>): Record<SourceKey,
 }
 
 /**
+ * Stato della batteria per il colore dell'indicatore di carica.
+ *
+ * La soglia bassa vince su tutto: una batteria quasi scarica va segnalata
+ * anche mentre sta caricando, perche' il problema e' quanta autonomia resta,
+ * non la direzione in cui si sta muovendo.
+ */
+export function socStatus(
+  soc: number,
+  batteryW: number | undefined,
+  eps: number,
+  lowThreshold: number
+): SocStatus {
+  if (soc <= lowThreshold) {
+    return "low";
+  }
+  if (batteryW === undefined) {
+    return "idle";
+  }
+  if (batteryW <= -eps) {
+    return "charging";
+  }
+  return batteryW >= eps ? "discharging" : "idle";
+}
+
+/**
+ * Direzione reale dell'energia nella riga Sorgente -> Casa -> Rete.
+ *
+ * Il segmento della rete e' l'unico che cambia verso: si esporta (forward,
+ * dalla casa alla rete) o si preleva (reverse, dalla rete alla casa). Dentro
+ * la banda morta e' spento: senza, sfarfallerebbe a ogni oscillazione dello
+ * zero.
+ */
+export function flowIndicator(
+  pvW: number,
+  batteryW: number | undefined,
+  gridW: number,
+  eps: number
+): FlowIndicator {
+  const fromBattery = Math.max(batteryW ?? 0, 0);
+  return {
+    // Il nodo di sinistra mostra chi sta davvero producendo: col FV fermo di
+    // notte e' la batteria a comparire.
+    source: pvW >= eps ? "pv" : fromBattery >= eps ? "battery" : undefined,
+    toHouse: pvW + fromBattery >= eps,
+    grid: gridW <= -eps ? "forward" : gridW >= eps ? "reverse" : "off",
+  };
+}
+
+/**
  * Snapshot completo a partire dalle letture gia' normalizzate.
  *
  * E' una funzione TOTALE: ritorna sempre uno snapshot, anche degradato. Le
@@ -256,6 +332,9 @@ export function computeEnergy(input: EnergyInput, options: EnergyOptions): Energ
     : deriveHouse(pv, grid, input.battery);
   const house = rawHouse === undefined ? undefined : Math.max(0, rawHouse);
 
+  // Certi BMS riportano 100,4 o -0,2: il clamp evita una barretta che sfora.
+  const soc = input.soc === undefined ? undefined : Math.min(100, Math.max(0, input.soc));
+
   return {
     state,
     severity: stateSeverity(state),
@@ -268,5 +347,11 @@ export function computeEnergy(input: EnergyInput, options: EnergyOptions): Energ
       house === undefined ? undefined : provenance(house, pv, battery, grid, sourceEps),
     surplus: grid <= -eps ? Math.abs(grid) : undefined,
     charging: battery !== undefined && battery <= -eps ? Math.abs(battery) : undefined,
+    soc,
+    socStatus:
+      soc === undefined
+        ? undefined
+        : socStatus(soc, battery, eps, Math.min(100, Math.max(0, options.socLow))),
+    flow: flowIndicator(pv, battery, grid, eps),
   };
 }

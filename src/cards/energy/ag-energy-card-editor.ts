@@ -55,6 +55,7 @@ export class AgEnergyCardEditor extends LitElement implements LovelaceCardEditor
         { name: "grid_entity", required: true, selector: { entity: {} } },
         { name: "pv_entity", required: true, selector: { entity: {} } },
         { name: "battery_entity", selector: { entity: {} } },
+        { name: "soc_entity", selector: { entity: {} } },
         { name: "house_entity", selector: { entity: {} } },
         {
           name: "",
@@ -95,6 +96,12 @@ export class AgEnergyCardEditor extends LitElement implements LovelaceCardEditor
               },
             },
           ],
+        },
+        {
+          name: "soc_low",
+          selector: {
+            number: { min: 0, max: 100, step: 1, mode: "box", unit_of_measurement: "%" },
+          },
         },
       ],
     },
@@ -161,11 +168,13 @@ export class AgEnergyCardEditor extends LitElement implements LovelaceCardEditor
       grid_entity: "Potenza rete",
       pv_entity: "Potenza fotovoltaico",
       battery_entity: "Potenza batteria",
+      soc_entity: "Carica batteria (%)",
       house_entity: "Potenza casa",
       invert_grid: "Inverti segno rete",
       invert_battery: "Inverti segno batteria",
       deadband: "Zona morta",
       power_unit: "Unità delle potenze",
+      soc_low: "Carica critica",
       title_font: "Font del titolo",
       value_font: "Font dei valori",
       title_size: "Dimensione verdetto",
@@ -196,6 +205,10 @@ export class AgEnergyCardEditor extends LitElement implements LovelaceCardEditor
       pv_entity: "Potenza prodotta dal fotovoltaico. I valori negativi vengono letti come zero.",
       battery_entity:
         "Facoltativa. La card si aspetta positivo = scarica (la batteria eroga), negativo = carica.",
+      soc_entity:
+        "Facoltativa: stato di carica in % (0-100). Mostra la mini-batteria in testata, che si riempie dal basso. Vuota = indicatore assente.",
+      soc_low:
+        "Sotto questa carica l'indicatore passa al colore di Prelievo, anche mentre la batteria sta caricando: quel che conta è quanta autonomia resta.",
       house_entity:
         "Facoltativa: vuota = ricavata come FV + Batteria + Rete. Serve un sensore diretto solo se il bilancio non torna.",
       invert_grid:
