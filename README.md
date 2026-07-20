@@ -199,13 +199,33 @@ Note:
 - Fuori da un contenitore che condivide, `max_mode: group` si comporta come
   `own`: la card non si rompe mai.
 
+### Icone
+
+L'**AG Bar Card** mostra di default l'**icona dell'entità**, quella che Home
+Assistant già le associa: non serve scriverla. `icon` la sovrascrive quando ne
+vuoi una diversa, `show_icon: false` la toglie del tutto. L'icona prende il
+colore della barra, quindi segue le soglie.
+
+```yaml
+type: custom:ag-bar-card
+entity: sensor.pompa_calore_potenza
+# icon: mdi:heat-pump   # per sovrascriverla
+# show_icon: false      # per non mostrarne nessuna
+```
+
 ### Font
 
 Tutte le card espongono `value_font`, che vale per valori, nomi ed etichette.
 Il default è `Jost, sans-serif`; scrivi `inherit` per usare il font del tema.
-Panel, Battery ed Energy hanno in più `title_font` per il solo titolo (sulla
-Energy vale anche per il verdetto), che di default resta quello del tema
-(comodo per un serif da display sui titoli e un sans sui numeri).
+Panel, Battery, Energy e Bar hanno in più `title_font` (comodo per un serif da
+display sui titoli e un sans sui numeri):
+
+- su **Panel**, **Battery** ed **Energy** vale per il solo titolo — sulla Energy
+  anche per il verdetto — e di default resta quello del tema;
+- sulla **Bar** vale per **nome e descrizione**, mentre `value_font` resta al
+  solo valore: è così che il numero può avere un font diverso dalla descrizione.
+  Qui il default di `title_font` è `Jost, sans-serif` come `value_font`, non il
+  font del tema, perché su questa card nome e descrizione erano già in Jost.
 
 **Il font va caricato dal tema HA**: dentro lo Shadow DOM le `@font-face`
 dichiarate da una card vengono ignorate, quindi la collezione non può caricarlo
@@ -235,14 +255,21 @@ cards: [...]
 
 - **`flat: true`** (default) — il figlio non ha cornice, quindi fa visivamente
   parte del contenitore ed è questo a dargli lo spazio: le card AG (Bar, Entity,
-  Battery) azzerano il proprio spazio orizzontale e si allineano al titolo,
-  come fa da sempre l'AG Separator Card. Senza questo si sommerebbero due
-  spaziature e le righe risulterebbero rientrate rispetto al titolo.
+  Battery, Energy) azzerano il proprio spazio orizzontale e si allineano al
+  titolo, come fa da sempre l'AG Separator Card. Senza questo si sommerebbero
+  due spaziature e le righe risulterebbero rientrate rispetto al titolo.
 - **`flat: false`** — il figlio mantiene la propria cornice ed è di nuovo
   autonomo: riprende i suoi 16px, esattamente come se stesse fuori da un
   contenitore.
 
 Vale per Panel, VStack e HStack allo stesso modo.
+
+**Sull'asse verticale**, in `flat` la sola **AG Bar Card** azzera anche il
+proprio spazio sopra e sotto: senza cornice quello spazio non separa più niente,
+e a regolare il ritmo tra le barre resta il solo `gap` del contenitore. Un
+elenco di barre risulta così molto più compatto; per allargarlo si alza `gap`,
+che è l'unico punto da toccare. Le altre card foglia tengono il loro spazio
+verticale.
 
 ## Sviluppo
 

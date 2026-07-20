@@ -330,16 +330,24 @@ export const containerStyles = css`
     min-width: 0;
   }
   /* Senza cornice il figlio fa parte del genitore, quindi è il genitore a
-     dargli lo spazio orizzontale: le card AG azzerano il proprio e si
-     allineano al titolo, come fa da sempre il separator. Con la cornice (flat
-     a false) il figlio torna autonomo e riprende i suoi 16px, esattamente come
-     se stesse fuori da un contenitore. */
+     dargli lo spazio: le card AG azzerano il proprio e si allineano al titolo,
+     come fa da sempre il separator. Con la cornice (flat a false) il figlio
+     torna autonomo e riprende i suoi 16px, esattamente come se stesse fuori da
+     un contenitore.
+
+     Vale per entrambi gli assi. Sull'asse verticale lo spazio della card
+     separava il testo dalla propria cornice: tolta quella non separa più
+     niente, e a regolare il ritmo tra i figli resta il solo gap qui sopra.
+     Oggi la legge la sola ag-bar-card (le altre foglie tengono il loro spazio
+     verticale fisso); la variabile è qui perché estenderle non richieda di
+     rimettere mano ai contenitori. */
   .children.flat > .child {
     --ha-card-background: transparent;
     --ha-card-border-width: 0;
     --ha-card-box-shadow: none;
     --ha-card-border-color: transparent;
     --ag-item-padding-x: 0;
+    --ag-item-padding-y: 0;
   }
   .children-error {
     color: var(--error-color, #db4437);

@@ -28,7 +28,8 @@ export interface AgBarCardConfig extends LovelaceCardConfig {
   entity?: string; // obbligatoria, validata in setConfig()
   name?: string;
   description?: string; // maiuscoletto accanto al nome (es. "19 KWP")
-  icon?: string; // vuoto = nessuna icona
+  icon?: string; // vuoto = icona dell'entita'
+  show_icon?: boolean; // false = nessuna icona; default true
   value_format?: AgBarValueFormat; // default "auto"
   decimals?: number; // solo per "auto"; le potenze si formattano da sole
   max_mode?: AgBarMaxMode; // default "own"
@@ -38,7 +39,8 @@ export interface AgBarCardConfig extends LovelaceCardConfig {
   level_warning?: number; // % del massimo; assente = nessuna soglia
   level_alarm?: number; // % del massimo; assente = nessuna soglia
   level_direction?: AgBarLevelDirection; // default "above"
-  value_font?: string; // font-family CSS di nome, descrizione e valore
+  title_font?: string; // font-family CSS di nome e descrizione
+  value_font?: string; // font-family CSS del solo valore
   title_size?: number; // px, dimensione del nome
   bar_height?: number; // px
   color_normal?: string;
@@ -69,10 +71,17 @@ export const DEFAULT_CONFIG: Partial<AgBarCardConfig> = {
   name: "",
   description: "",
   icon: "",
+  show_icon: true,
   value_format: "auto",
   max_mode: "own",
   max_unit: "",
   level_direction: "above",
+  // Diversamente da panel/battery/energy, che hanno `title_font: ""` perche' i
+  // loro titoli hanno sempre ereditato il font del tema, qui il default e'
+  // Jost: nome e descrizione erano gia' in Jost tramite `value_font`, e un
+  // default vuoto li sposterebbe di colpo sul font del tema in tutte le barre
+  // gia' configurate.
+  title_font: DEFAULT_VALUE_FONT,
   value_font: DEFAULT_VALUE_FONT,
   decimals: DEFAULTS.decimals,
   title_size: DEFAULTS.title_size,

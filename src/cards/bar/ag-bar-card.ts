@@ -283,14 +283,16 @@ export class AgBarCard extends AgBaseCard<AgBarCardConfig> {
     const barColor = known ? this._color(severity) : UNKNOWN_COLOR;
     const valueText = this._formatValue(raw, compare);
 
+    const titleFont = config.title_font?.trim();
     const valueFont = config.value_font?.trim();
     const vars = styleMap({
       "--ag-bar-fill": `${percent}%`,
       "--ag-bar-color": barColor,
       "--ag-bar-height": `${config.bar_height ?? DEFAULTS.bar_height}px`,
       "--ag-title-size": `${config.title_size ?? DEFAULTS.title_size}px`,
-      // Impostata solo se configurata: svuotando il campo il var() del CSS
+      // Impostate solo se configurate: svuotando il campo il var() del CSS
       // ricade su `inherit`, cioè il font del tema HA.
+      ...(titleFont ? { "--ag-title-font": titleFont } : {}),
       ...(valueFont ? { "--ag-value-font": valueFont } : {}),
     });
 
@@ -303,7 +305,23 @@ export class AgBarCard extends AgBaseCard<AgBarCardConfig> {
       >
         <div class="content">
           <div class="row">
-            ${config.icon ? html`<ha-icon class="icon" .icon=${config.icon}></ha-icon>` : nothing}
+            ${config.show_icon === false
+              ? nothing
+              : stateObj
+                ? html`
+                    <ha-state-icon
+                      class="icon"
+                      .hass=${this.hass}
+                      .stateObj=${stateObj}
+                      .icon=${config.icon || undefined}
+                    ></ha-state-icon>
+                  `
+                : html`
+                    <ha-icon
+                      class="icon"
+                      .icon=${config.icon || "mdi:alert-circle-outline"}
+                    ></ha-icon>
+                  `}
             <span class="name" title=${name}>${name}</span>
             ${config.description
               ? html`<span class="description">${config.description}</span>`
@@ -335,10 +353,13 @@ export class AgBarCard extends AgBaseCard<AgBarCardConfig> {
       cursor: pointer;
     }
 
-    /* Lo spazio orizzontale lo azzera il contenitore che ne fornisce uno
-       proprio (vedi ag-panel-card), così la riga si allinea al titolo. */
+    /* Lo spazio lo azzera il contenitore che ne fornisce uno proprio (vedi
+       ag-panel-card): sull'asse X per allineare la riga al titolo, sull'asse Y
+       perché senza cornice non c'è più niente da cui distanziare il testo e a
+       regolare il ritmo tra le barre resta il gap del contenitore. Fuori da
+       un contenitore valgono i fallback. */
     .content {
-      padding: 10px var(--ag-item-padding-x, 16px);
+      padding: var(--ag-item-padding-y, 10px) var(--ag-item-padding-x, 16px);
       box-sizing: border-box;
     }
 
@@ -350,7 +371,9 @@ export class AgBarCard extends AgBaseCard<AgBarCardConfig> {
       gap: 8px;
       margin-bottom: 6px;
     }
-    /* ha-icon non ha una baseline utile: va centrata a parte. */
+    /* Le icone non hanno una baseline utile: vanno centrate a parte.
+       ha-state-icon rende dentro un ha-icon/ha-svg-icon su currentColor,
+       quindi color e --mdc-icon-size valgono per entrambi i rami. */
     .icon {
       align-self: center;
       flex: 0 0 auto;
@@ -358,9 +381,11 @@ export class AgBarCard extends AgBaseCard<AgBarCardConfig> {
       --mdc-icon-size: 18px;
     }
     /* Un font custom va caricato a livello di documento (dal tema HA): qui si
-       può solo usarlo. Senza --ag-value-font si eredita il font del tema. */
+       può solo usarlo. Senza la variabile si eredita il font del tema.
+       Nome e descrizione seguono --ag-title-font, il valore --ag-value-font:
+       sono i due assi che l'utente può separare. */
     .name {
-      font-family: var(--ag-value-font, inherit);
+      font-family: var(--ag-title-font, inherit);
       font-size: var(--ag-title-size, 15px);
       font-weight: 600;
       color: var(--primary-text-color);
@@ -370,9 +395,10 @@ export class AgBarCard extends AgBaseCard<AgBarCardConfig> {
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    /* Stesso trattamento di .summary-label del panel. */
+    /* Stesso trattamento di .summary-label del panel. Segue il nome e non il
+       valore: sono le due etichette a sinistra, il numero sta per conto suo. */
     .description {
-      font-family: var(--ag-value-font, inherit);
+      font-family: var(--ag-title-font, inherit);
       font-size: 11px;
       letter-spacing: 0.08em;
       text-transform: uppercase;

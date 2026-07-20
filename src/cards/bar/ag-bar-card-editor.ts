@@ -32,7 +32,14 @@ export class AgBarCardEditor extends LitElement implements LovelaceCardEditor {
         { name: "description", selector: { text: {} } },
       ],
     },
-    { name: "icon", selector: { icon: {} } },
+    {
+      name: "",
+      type: "grid",
+      schema: [
+        { name: "icon", selector: { icon: {} } },
+        { name: "show_icon", selector: { boolean: {} } },
+      ],
+    },
     {
       name: "",
       type: "expandable",
@@ -143,14 +150,15 @@ export class AgBarCardEditor extends LitElement implements LovelaceCardEditor {
           name: "",
           type: "grid",
           schema: [
+            { name: "title_font", selector: { text: {} } },
             { name: "value_font", selector: { text: {} } },
-            {
-              name: "title_size",
-              selector: {
-                number: { min: 10, max: 32, step: 1, mode: "box", unit_of_measurement: "px" },
-              },
-            },
           ],
+        },
+        {
+          name: "title_size",
+          selector: {
+            number: { min: 10, max: 32, step: 1, mode: "box", unit_of_measurement: "px" },
+          },
         },
         {
           name: "bar_height",
@@ -181,6 +189,7 @@ export class AgBarCardEditor extends LitElement implements LovelaceCardEditor {
       name: "Nome",
       description: "Descrizione",
       icon: "Icona",
+      show_icon: "Mostra icona",
       value_format: "Formato del valore",
       decimals: "Decimali",
       max_mode: "Origine del massimo",
@@ -190,7 +199,8 @@ export class AgBarCardEditor extends LitElement implements LovelaceCardEditor {
       level_direction: "Direzione delle soglie",
       level_warning: "Soglia warning",
       level_alarm: "Soglia allarme",
-      value_font: "Font",
+      title_font: "Font di nome e descrizione",
+      value_font: "Font del valore",
       title_size: "Dimensione nome",
       bar_height: "Spessore barra",
       color_normal: "Colore normale",
@@ -206,11 +216,16 @@ export class AgBarCardEditor extends LitElement implements LovelaceCardEditor {
 
   private _computeHelper = (schema: { name: string }): string | undefined => {
     const colorHelp = "Vuoto = colore del tema. Accetta CSS: #ff9800, red, var(--mia-var).";
+    // Il font va caricato a livello di documento: nello Shadow DOM le
+    // @font-face dichiarate dalla card vengono ignorate.
+    const fontHelp = (what: string): string =>
+      `${what} Default 'Jost, sans-serif'; scrivi 'inherit' per usare il font del tema. Il font va caricato dal tema HA, la card non può caricarlo da sé.`;
     const levelHelp =
       "In percentuale del massimo. Vuota = nessuna soglia. Le soglie cambiano solo il colore della barra, non lo sfondo della card.";
     const helpers: Record<string, string> = {
       description: "Testo breve accanto al nome, in maiuscoletto (es. 19 KWP).",
-      icon: "Vuota = nessuna icona. Prende il colore della barra.",
+      icon: "Vuota = icona dell'entità. Prende il colore della barra.",
+      show_icon: "Spegni per non mostrare nessuna icona.",
       value_format:
         "Automatico usa valore e unità dell'entità. Potenza converte tutto in W e mostra W/kW: da usare su tutte le barre di un gruppo con unità diverse.",
       decimals: "Solo per il formato automatico: le potenze si formattano da sole.",
@@ -226,8 +241,8 @@ export class AgBarCardEditor extends LitElement implements LovelaceCardEditor {
         "Alto = allarme per consumi e carichi; basso = allarme per livelli e riserve (come la batteria).",
       level_warning: levelHelp,
       level_alarm: levelHelp,
-      value_font:
-        "Font di nome, descrizione e valore. Default 'Jost, sans-serif'; scrivi 'inherit' per usare il font del tema. Il font va caricato dal tema HA, la card non può caricarlo da sé.",
+      title_font: fontHelp("Font di nome e descrizione, le due etichette a sinistra."),
+      value_font: fontHelp("Font del solo valore, così il numero può differire dalle etichette."),
       title_size: "Dimensione del nome. I serif da display stanno meglio sui 17-18px.",
       bar_height: "Spessore della barra di progresso.",
       color_normal: colorHelp,
