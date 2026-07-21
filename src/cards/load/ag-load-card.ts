@@ -273,12 +273,23 @@ export class AgLoadCard extends AgBaseCard<AgLoadCardConfig> {
       display: flex;
       align-items: center;
     }
-    /* Interruttore acceso in oro. Vanno puntate QUESTE due variabili, non
-       --switch-checked-color: HA definisce alla radice del documento
-       "--switch-checked-track-color: var(--switch-checked-color)", che si
-       risolve lì (dove vale --primary-color, il blu). Reimpostare
-       --switch-checked-color più in basso nell'albero non la ricalcola. */
+    /* Interruttore acceso in oro.
+       ATTENZIONE, dipende dalla versione di HA: ha-switch è stato migrato da
+       MWC a webawesome e con esso TUTTA la famiglia di variabili. Nelle versioni
+       recenti le --switch-checked-* non esistono più e il track ricade sul
+       proprio default var(--ha-color-fill-primary-normal-resting), cioè il blu
+       del brand: è il motivo per cui impostarle non sortiva alcun effetto, né
+       qui né dal tema. Si impostano quindi entrambe le famiglie, perché la card
+       è distribuita e non può sapere su quale versione gira.
+       Il pomello resta al suo default (--ha-color-on-primary-normal): è pensato
+       per contrastare su un track pieno, come nei mockup. */
     ha-switch {
+      /* HA recenti (webawesome) */
+      --ha-switch-checked-background-color: var(--accent-color, #ff9800);
+      --ha-switch-checked-background-color-hover: var(--accent-color, #ff9800);
+      --ha-switch-checked-border-color: var(--accent-color, #ff9800);
+      /* HA precedenti (MWC) */
+      --switch-checked-color: var(--accent-color, #ff9800);
       --switch-checked-button-color: var(--accent-color, #ff9800);
       --switch-checked-track-color: var(--accent-color, #ff9800);
     }
