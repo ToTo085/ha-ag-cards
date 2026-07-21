@@ -166,33 +166,61 @@ export class AgLoadCard extends AgBaseCard<AgLoadCardConfig> {
     ha-card.interactive {
       cursor: pointer;
     }
+    /* Rete di sicurezza per i temi con raggio più generoso del chip: senza,
+       la velatura sborderebbe squadrata dagli angoli arrotondati. */
+    ha-card {
+      overflow: hidden;
+    }
     /* Come ag-entity-card: il contenitore che ha uno spazio proprio azzera
-       --ag-item-padding-x, così le righe si allineano al titolo. Lo spazio
-       verticale resta fisso (12px) anche in flat, come le altre foglie. */
+       --ag-item-padding-x, così le righe si allineano al titolo.
+       L'altezza è FISSA e non dedotta dal testo: così una riga con la potenza e
+       una senza sono alte uguali e le liste restano regolari. */
     .content {
       position: relative;
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 12px var(--ag-item-padding-x, 16px);
+      min-height: var(--ag-load-row-height, 48px);
+      padding: 6px var(--ag-item-padding-x, 16px);
+      box-sizing: border-box;
     }
-    /* Stato "assorbe": velatura oro di fondo + filetto verticale a sinistra.
-       Applicati su .content (non su ha-card) così restano visibili anche in
-       modalità flat, dove la cornice della card è dissolta dal contenitore. */
-    .content.absorbing {
+    /* Stato "assorbe": velatura oro + filetto verticale a sinistra, entrambi
+       DIPINTI (pseudo-elementi) e non parte del box. Un chip con margini propri
+       cambierebbe l'altezza della riga tra spento e assorbe, facendola saltare.
+       Stanno su .content e non su ha-card così sopravvivono al flat, dove il
+       contenitore dissolve la cornice della card. */
+    .content.absorbing::after {
+      content: "";
+      position: absolute;
+      inset: 3px 0; /* rientro verticale -> 6px di stacco tra righe adiacenti */
+      border-radius: 10px;
       background: color-mix(in srgb, var(--accent-color, #ff9800) 8%, transparent);
+      z-index: 0;
     }
+    /* Filetto a pill: non arrivando ai bordi non combacia con quello della riga
+       successiva e non sborda sugli angoli della card. */
     .content.absorbing::before {
       content: "";
       position: absolute;
       left: 0;
-      top: 0;
-      bottom: 0;
+      top: 9px;
+      bottom: 9px;
       width: 3px;
+      border-radius: 3px;
       background: var(--accent-color, #ff9800);
+      z-index: 1;
     }
+    /* Gli pseudo-elementi sono posizionati: senza questo coprirebbero il
+       contenuto statico invece di stargli dietro. */
+    .content > * {
+      position: relative;
+      z-index: 1;
+    }
+    /* Neutro = attenuato (spento/standby), come nei mockup: --primary-color
+       renderebbe l'icona di un carico spento brillante quanto una accesa. */
     .icon {
-      color: var(--state-icon-color, var(--primary-color));
+      color: var(--secondary-text-color);
+      --mdc-icon-size: 24px;
       flex: 0 0 auto;
     }
     /* Acceso senza sensore, oppure acceso e assorbe: icona in oro. */
@@ -203,12 +231,18 @@ export class AgLoadCard extends AgBaseCard<AgLoadCardConfig> {
       display: flex;
       flex-direction: column;
       justify-content: center;
-      gap: 2px;
+      gap: 1px;
       flex: 1 1 auto;
       min-width: 0;
     }
+    /* Le line-height esplicite non sono cosmetiche: senza, un tema con
+       interlinea generosa sfonderebbe --ag-load-row-height e l'altezza della
+       riga tornerebbe a dipendere dalla presenza della potenza.
+       Conto: 18 + 1 + 15 = 34px di testo, +12px di padding = 46px < 48px. */
     .name {
       font-family: var(--ag-value-font, inherit);
+      font-size: 15px;
+      line-height: 1.2;
       font-weight: 600;
       color: var(--primary-text-color);
       overflow: hidden;
@@ -218,6 +252,7 @@ export class AgLoadCard extends AgBaseCard<AgLoadCardConfig> {
     .power {
       font-family: var(--ag-value-font, inherit);
       font-size: 12px;
+      line-height: 1.25;
       color: var(--secondary-text-color);
       font-variant-numeric: tabular-nums;
       overflow: hidden;
@@ -238,11 +273,14 @@ export class AgLoadCard extends AgBaseCard<AgLoadCardConfig> {
       display: flex;
       align-items: center;
     }
-    /* Track dell'interruttore acceso in oro, coerente con l'accento della
-       collezione. Il pomello resta al colore contrastante del tema (come nei
-       mockup): non forziamo --switch-checked-button-color. */
+    /* Interruttore acceso in oro. Vanno puntate QUESTE due variabili, non
+       --switch-checked-color: HA definisce alla radice del documento
+       "--switch-checked-track-color: var(--switch-checked-color)", che si
+       risolve lì (dove vale --primary-color, il blu). Reimpostare
+       --switch-checked-color più in basso nell'albero non la ricalcola. */
     ha-switch {
-      --switch-checked-color: var(--accent-color, #ff9800);
+      --switch-checked-button-color: var(--accent-color, #ff9800);
+      --switch-checked-track-color: var(--accent-color, #ff9800);
     }
   `;
 }
