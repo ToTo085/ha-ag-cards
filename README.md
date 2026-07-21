@@ -9,6 +9,7 @@ Ogni card include un **popup di configurazione visuale** (editor `ha-form`), cos
 | Card | Tipo | Descrizione |
 |------|------|-------------|
 | AG Entity Card | `custom:ag-entity-card` | Mostra icona, nome e stato di una singola entità. |
+| AG Load Card | `custom:ag-load-card` | Comanda on/off un carico e, con un sensore di potenza, distingue se assorbe o è acceso a vuoto. |
 | AG Battery Card | `custom:ag-battery-card` | Stato di una batteria domestica: carica, potenza, rete e backup. |
 | AG Bar Card | `custom:ag-bar-card` | Barra orizzontale con nome, descrizione e valore; massimo proprio o condiviso col gruppo. |
 | AG Energy Card | `custom:ag-energy-card` | Verdetto sullo scambio con la rete e copertura del carico, in due layout. |
@@ -47,7 +48,7 @@ name: Esempio
 
 ### Azioni (tap / pressione prolungata / doppio tap)
 
-Le card che mostrano un'entità (**Entity**, **Battery**, **Bar** ed **Energy**) supportano le azioni
+Le card che mostrano un'entità (**Entity**, **Load**, **Battery**, **Bar** ed **Energy**) supportano le azioni
 standard di Home Assistant. **Di default, il tap apre il pannello nativo di
 dettaglio** (`more-info`) dell'entità; pressione prolungata e doppio tap restano
 inattivi finché non li configuri. Tutto è impostabile dall'editor (sezione
@@ -69,6 +70,54 @@ Sono supportate le azioni HA: `more-info` (default), `toggle`, `call-service`,
 `navigate`, `url`, `none`. Sulla Battery card le azioni agiscono sull'entità
 della carica (`battery_entity`), sulla Energy card su quella della rete
 (`grid_entity`).
+
+### Comando carichi
+
+L'**AG Load Card** è una riga: icona, nome, interruttore a destra. Associando un
+sensore di potenza (`power_entity`) compare sotto il nome la lettura in W, che
+distingue *acceso e assorbe* da *solo acceso*:
+
+```yaml
+type: custom:ag-load-card
+entity: switch.shelly_plug_frigobar
+power_entity: sensor.shelly_plug_frigobar_power
+name: Frigobar
+icon: mdi:fridge-outline
+standby_threshold: 0.5   # W sotto cui "acceso" è standby (default 0.5)
+```
+
+Il **tap sull'interruttore** aziona il carico (`homeassistant.toggle`) senza
+aprire il more-info; il **tap sulla riga** apre il more-info (configurabile con
+`tap_action` / `hold_action` / `double_tap_action`). Quando il carico assorbe
+sopra la soglia, potenza e icona passano in **oro** e la riga prende un filetto
+oro a sinistra; in standby (`0,0 W · standby`) o da spento (`0,0 W · spento`) i
+toni restano neutri. Senza `power_entity` la card mostra solo nome e
+interruttore, con l'icona in oro quando è acceso.
+
+È pensata come **riga ripetibile**: standalone è una riga isolata con cornice,
+mentre dentro un contenitore flat (**AG Panel Card** / **AG VStack Card**)
+diventa una riga di lista, con bordi e intestazione forniti dal contenitore:
+
+```yaml
+type: custom:ag-panel-card
+title: Carichi
+summary_entities:                      # somma potenze nell'header
+  - sensor.shelly_plug_frigobar_power
+  - sensor.asciugatrice_power
+summary_label: Totale
+cards:
+  - type: custom:ag-load-card
+    entity: light.sala
+    name: Sala
+  - type: custom:ag-load-card
+    entity: switch.asciugatrice
+    power_entity: sensor.asciugatrice_power
+    name: Asciugatrice
+  - type: custom:ag-load-card
+    entity: switch.shelly_plug_frigobar
+    power_entity: sensor.shelly_plug_frigobar_power
+    name: Frigobar
+```
 
 ### Energia e autoconsumo
 

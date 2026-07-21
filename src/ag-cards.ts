@@ -13,6 +13,7 @@ import { AG_CARDS_VERSION } from "./const";
 
 // -- Registrazione card --------------------------------------------------
 import "./cards/entity/ag-entity-card";
+import "./cards/load/ag-load-card";
 import "./cards/battery/ag-battery-card";
 import "./cards/bar/ag-bar-card";
 import "./cards/energy/ag-energy-card";
