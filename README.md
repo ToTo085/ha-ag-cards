@@ -89,8 +89,8 @@ standby_threshold: 0.5   # W sotto cui "acceso" è standby (default 0.5)
 Il **tap sull'interruttore** aziona il carico (`homeassistant.toggle`) senza
 aprire il more-info; il **tap sulla riga** apre il more-info (configurabile con
 `tap_action` / `hold_action` / `double_tap_action`). Quando il carico assorbe
-sopra la soglia, potenza e icona passano in **oro** e la riga prende un filetto
-oro a sinistra; in standby (`0,0 W · standby`) o da spento (`0,0 W · spento`) i
+sopra la soglia, potenza e icona passano in **oro** e la riga prende una leggera
+velatura oro; in standby (`0,0 W · standby`) o da spento (`0,0 W · spento`) i
 toni restano neutri. Senza `power_entity` la card mostra solo nome e
 interruttore, con l'icona in oro quando è acceso.
 

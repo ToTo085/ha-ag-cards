@@ -184,11 +184,14 @@ export class AgLoadCard extends AgBaseCard<AgLoadCardConfig> {
       padding: 6px var(--ag-item-padding-x, 16px);
       box-sizing: border-box;
     }
-    /* Stato "assorbe": velatura oro + filetto verticale a sinistra, entrambi
-       DIPINTI (pseudo-elementi) e non parte del box. Un chip con margini propri
-       cambierebbe l'altezza della riga tra spento e assorbe, facendola saltare.
-       Stanno su .content e non su ha-card così sopravvivono al flat, dove il
-       contenitore dissolve la cornice della card. */
+    /* Stato "assorbe": velatura oro DIPINTA (pseudo-elemento) e non parte del
+       box. Un chip con margini propri cambierebbe l'altezza della riga tra
+       spento e assorbe, facendola saltare. Sta su .content e non su ha-card
+       così sopravvive al flat, dove il contenitore dissolve la cornice della
+       card. Il rientro verticale tiene separate due righe adiacenti che
+       assorbono, anche con il gap del contenitore a zero.
+       L'accento è affidato a velatura + icona + numero: niente filetto
+       verticale a sinistra. */
     .content.absorbing::after {
       content: "";
       position: absolute;
@@ -197,21 +200,8 @@ export class AgLoadCard extends AgBaseCard<AgLoadCardConfig> {
       background: color-mix(in srgb, var(--accent-color, #ff9800) 8%, transparent);
       z-index: 0;
     }
-    /* Filetto a pill: non arrivando ai bordi non combacia con quello della riga
-       successiva e non sborda sugli angoli della card. */
-    .content.absorbing::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 9px;
-      bottom: 9px;
-      width: 3px;
-      border-radius: 3px;
-      background: var(--accent-color, #ff9800);
-      z-index: 1;
-    }
-    /* Gli pseudo-elementi sono posizionati: senza questo coprirebbero il
-       contenuto statico invece di stargli dietro. */
+    /* Lo pseudo-elemento è posizionato: senza questo coprirebbe il contenuto
+       statico invece di stargli dietro. */
     .content > * {
       position: relative;
       z-index: 1;
@@ -281,13 +271,19 @@ export class AgLoadCard extends AgBaseCard<AgLoadCardConfig> {
        del brand: è il motivo per cui impostarle non sortiva alcun effetto, né
        qui né dal tema. Si impostano quindi entrambe le famiglie, perché la card
        è distribuita e non può sapere su quale versione gira.
-       Il pomello resta al suo default (--ha-color-on-primary-normal): è pensato
-       per contrastare su un track pieno, come nei mockup. */
+       Anche il POMELLO va impostato: il suo default --ha-color-on-primary-normal
+       è il contrasto pensato per il primary del brand, e su un track sostituito
+       con l'accento resta blu. Lo si porta sul fondo della card, che è scuro in
+       tema scuro e chiaro in tema chiaro: sempre in contrasto con l'oro. */
     ha-switch {
       /* HA recenti (webawesome) */
       --ha-switch-checked-background-color: var(--accent-color, #ff9800);
       --ha-switch-checked-background-color-hover: var(--accent-color, #ff9800);
       --ha-switch-checked-border-color: var(--accent-color, #ff9800);
+      --ha-switch-checked-thumb-background-color: var(--card-background-color, #fff);
+      --ha-switch-checked-thumb-background-color-hover: var(--card-background-color, #fff);
+      --ha-switch-checked-thumb-border-color: var(--card-background-color, #fff);
+      --ha-switch-checked-thumb-border-color-hover: var(--card-background-color, #fff);
       /* HA precedenti (MWC) */
       --switch-checked-color: var(--accent-color, #ff9800);
       --switch-checked-button-color: var(--accent-color, #ff9800);

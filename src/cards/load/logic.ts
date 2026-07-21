@@ -16,7 +16,7 @@ import type { HomeAssistant } from "../../types";
  * - `standby`: acceso con sensore, potenza <= soglia (o potenza ignota): acceso
  *   a vuoto, neutro.
  * - `absorbing`: acceso con sensore, potenza > soglia → accento oro (icona,
- *   numero, filetto a sinistra).
+ *   numero, velatura di sfondo).
  */
 export type LoadVerdict = "unavailable" | "off" | "on" | "standby" | "absorbing";
 
