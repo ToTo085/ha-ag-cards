@@ -10,6 +10,7 @@ Ogni card include un **popup di configurazione visuale** (editor `ha-form`), cos
 |------|------|-------------|
 | AG Entity Card | `custom:ag-entity-card` | Mostra icona, nome e stato di una singola entità. |
 | AG Load Card | `custom:ag-load-card` | Comanda on/off un carico e, con un sensore di potenza, distingue se assorbe o è acceso a vuoto. |
+| AG Alarm Card | `custom:ag-alarm-card` | Pannello allarme alarmo in stile mosaico: modalità di inserimento, messaggi diagnostici, indicatore pronto/non pronto e avviso bypass. |
 | AG Battery Card | `custom:ag-battery-card` | Stato di una batteria domestica: carica, potenza, rete e backup. |
 | AG Bar Card | `custom:ag-bar-card` | Barra orizzontale con nome, descrizione e valore; massimo proprio o condiviso col gruppo. |
 | AG Energy Card | `custom:ag-energy-card` | Verdetto sullo scambio con la rete e copertura del carico, in due layout. |
@@ -48,7 +49,7 @@ name: Esempio
 
 ### Azioni (tap / pressione prolungata / doppio tap)
 
-Le card che mostrano un'entità (**Entity**, **Load**, **Battery**, **Bar** ed **Energy**) supportano le azioni
+Le card che mostrano un'entità (**Entity**, **Load**, **Alarm**, **Battery**, **Bar** ed **Energy**) supportano le azioni
 standard di Home Assistant. **Di default, il tap apre il pannello nativo di
 dettaglio** (`more-info`) dell'entità; pressione prolungata e doppio tap restano
 inattivi finché non li configuri. Tutto è impostabile dall'editor (sezione
@@ -118,6 +119,50 @@ cards:
     power_entity: sensor.shelly_plug_frigobar_power
     name: Frigobar
 ```
+
+### Allarme (alarmo)
+
+L'**AG Alarm Card** comanda un pannello dell'integrazione
+[alarmo](https://github.com/nielsfaber/alarmo) in stile mosaico: a sinistra
+icona, nome e stato; a destra una barra di pulsanti (disinserimento + modalità
+di inserimento), con la modalità corrente evidenziata.
+
+```yaml
+type: custom:ag-alarm-card
+entity: alarm_control_panel.alarmo
+name: Casa
+show_messages: true          # messaggi diagnostici (inserito / non inseribile)
+force_arm: true              # bottone "Forza inserimento" nei messaggi (default true)
+show_ready_indicator: true   # pallino pronto/non pronto sui pulsanti
+show_bypass_warning: true    # avviso quando inserito con sensori esclusi
+# modes: [home, away]        # opzionale: modalità mostrate e ordine (default: tutte le abilitate)
+```
+
+**Modalità automatiche.** I pulsanti mostrati sono quelli abilitati nel pannello
+(letti da `supported_features`): casa, fuori, notte, vacanza, personalizzata. Con
+`modes` puoi scegliere quali mostrare e in quale ordine.
+
+**Tre funzioni opzionali** (toggle nell'editor, sezione *Funzioni alarmo*),
+riprese dalla [alarmo-card](https://github.com/nielsfaber/alarmo-card):
+
+- **Messaggi diagnostici** (`show_messages`): mostra un avviso quando l'allarme
+  viene inserito o **non può essere inserito** (es. sensori aperti). In quel caso,
+  con `force_arm`, compare il bottone **Forza inserimento** che riprova
+  bypassando i sensori che bloccano.
+- **Pronto / non pronto** (`show_ready_indicator`): un pallino verde/rosso sui
+  pulsanti di inserimento indica se quella modalità è pronta.
+- **Avviso bypass** (`show_bypass_warning`): segnala quando l'allarme è inserito
+  con dei sensori esclusi.
+
+**Codice.** Se il pannello richiede un codice, il tap apre il **dialog nativo di
+Home Assistant** (col tastierino). Il tap sulla riga apre il more-info
+(configurabile con le azioni). Come le altre foglie, standalone ha la cornice e
+dentro un contenitore flat (**AG Panel Card** / **AG VStack Card**) diventa una
+riga di lista.
+
+> Nota: la card usa la sottoscrizione e le query websocket di alarmo; se l'API
+> differisse sulla tua versione, le tre funzioni si disattivano senza rompere la
+> card.
 
 ### Energia e autoconsumo
 

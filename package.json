@@ -1,6 +1,6 @@
 {
   "name": "ag-cards",
-  "version": "0.10.1",
+  "version": "0.11.0",
   "description": "AG Cards - Una collezione di card minimali e personalizzabili per Home Assistant",
   "type": "module",
   "main": "dist/ag-cards.js",
